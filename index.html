@@ -76,19 +76,24 @@
           <button @click="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-2.5 py-1.5 rounded-lg font-bold shadow">📊 Excel</button>
           <button @click="exportJSON()" class="bg-black/30 hover:bg-black/40 text-white text-xs px-2.5 py-1.5 rounded-lg font-bold shadow">💾 備份</button>
           
-          <!-- 主題顏色下拉選單 -->
-          <select x-model="currentTheme" @change="setThemeColor($event.target.value)" class="bg-black/30 hover:bg-black/40 text-white text-xs px-2.5 py-1.5 rounded-lg border border-white/20 font-medium cursor-pointer focus:outline-none">
+          <!-- 彩色圓圈主題選擇圖示 -->
+          <div class="flex items-center space-x-1.5 bg-black/20 px-2.5 py-1.5 rounded-xl border border-white/10 shrink-0">
             <template x-for="t in themeOptions" :key="t.key">
-              <option :value="t.key" x-text="`🎨 ${t.name}`" class="text-slate-800 bg-white dark:bg-slate-800 dark:text-slate-100"></option>
+              <button @click="setThemeColor(t.key)"
+                      :title="t.name"
+                      :style="`background-color: ${t.color}`"
+                      :class="currentTheme === t.key ? 'ring-2 ring-white scale-110 opacity-100' : 'opacity-60 hover:opacity-100'"
+                      class="w-4 h-4 rounded-full transition-all shrink-0">
+              </button>
             </template>
-          </select>
+          </div>
 
-          <!-- 切換模式按鈕 -->
-          <button @click="toggleDarkMode()" class="w-20 bg-black/30 hover:bg-black/40 text-white text-xs py-1.5 rounded-lg font-medium border border-white/20 transition text-center">
+          <!-- 切換模式按鈕：固定寬度 w-20 與 shrink-0 防排版跳動 -->
+          <button @click="toggleDarkMode()" class="w-20 shrink-0 bg-black/30 hover:bg-black/40 text-white text-xs py-1.5 rounded-lg font-medium border border-white/20 transition text-center">
             <span x-text="isDarkMode ? '☀️ Day' : '🌙 Dark'"></span>
           </button>
           
-          <button @click="logoutGoogle()" class="bg-black/30 hover:bg-black/40 text-white text-xs px-2.5 py-1.5 rounded-lg font-medium border border-white/20">登出</button>
+          <button @click="logoutGoogle()" class="bg-black/30 hover:bg-black/40 text-white text-xs px-2.5 py-1.5 rounded-lg font-medium border border-white/20 shrink-0">登出</button>
         </div>
       </div>
     </header>
@@ -121,54 +126,164 @@
         </div>
       </div>
 
-      <!-- ==================== 1. 主頁：行事曆與待辦事項 ==================== -->
-      <div x-show="currentTab === 'calendar'" class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 space-y-5">
-        <div class="flex flex-wrap justify-between items-center gap-2 border-b pb-3 dark:border-slate-700">
-          <div>
-            <h2 class="text-lg font-bold">📅 主頁教學行事曆與待辦事項</h2>
-            <p class="text-xs text-slate-400">在此管理教學任務與作業/測驗截止日，逾期項目將自動發出紅色警示。</p>
+      <!-- ==================== 1. 主頁：Google Calendar 風格行事曆 ==================== -->
+      <div x-show="currentTab === 'calendar'" class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 space-y-4">
+        
+        <!-- Google Calendar 工具列 Header -->
+        <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-700">
+          <div class="flex items-center space-x-3">
+            <button @click="goToday()" class="px-3.5 py-1.5 border border-slate-300 dark:border-slate-600 rounded-xl text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-700 transition">今天 Today</button>
+            <div class="flex items-center space-x-1">
+              <button @click="prevMonth()" class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-bold">◀</button>
+              <button @click="nextMonth()" class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-bold">▶</button>
+            </div>
+            <h2 class="text-xl font-black tracking-wide" x-text="`${calYear}年 ${calMonthNames[calMonth]}`"></h2>
           </div>
-          
+
           <div class="flex items-center space-x-2">
-            <span class="text-xs text-slate-400 font-bold">排序：</span>
-            <button @click="todoSortMode = 'date'" :class="todoSortMode === 'date' ? 'bg-indigo-600 text-white shadow' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'" class="px-2.5 py-1 rounded-lg text-xs font-bold transition">📅 按截止日期</button>
-            <button @click="todoSortMode = 'created'" :class="todoSortMode === 'created' ? 'bg-indigo-600 text-white shadow' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'" class="px-2.5 py-1 rounded-lg text-xs font-bold transition">⏱️ 按新增順序</button>
+            <!-- 視角切換：網格 vs 列表 -->
+            <div class="bg-slate-100 dark:bg-slate-700 p-1 rounded-xl flex text-xs font-bold">
+              <button @click="calViewMode = 'grid'" :class="calViewMode === 'grid' ? 'bg-white dark:bg-slate-800 shadow text-indigo-600 dark:text-indigo-400' : 'text-slate-500'" class="px-3 py-1 rounded-lg transition">📅 網格視角</button>
+              <button @click="calViewMode = 'list'" :class="calViewMode === 'list' ? 'bg-white dark:bg-slate-800 shadow text-indigo-600 dark:text-indigo-400' : 'text-slate-500'" class="px-3 py-1 rounded-lg transition">📋 列表視角</button>
+            </div>
+            <button @click="openAddEventModal(getLocalToday())" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow transition">+ 新增事項</button>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <input type="text" x-model="quickTodoText" placeholder="輸入待辦事項內容 (例: 批改 3A 單元一測驗)" class="px-4 py-2 border rounded-xl text-sm dark:bg-slate-700 border-slate-300 dark:border-slate-600">
-          <input type="date" x-model="quickTodoDate" class="px-4 py-2 border rounded-xl text-sm dark:bg-slate-700 border-slate-300 dark:border-slate-600">
-          <button @click="addQuickTodo()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm px-4 py-2 rounded-xl shadow transition">+ 新增待辦事項</button>
-        </div>
+        <!-- 側邊欄與行事曆主體區塊 -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          
+          <!-- 左側：分類色彩勾選清單 (Google Calendar Sidebar) -->
+          <div class="space-y-4 md:col-span-1 border-r border-slate-100 dark:border-slate-700/60 pr-3">
+            <button @click="openAddEventModal(getLocalToday())" class="w-full py-2.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 rounded-xl text-xs font-bold flex items-center justify-center space-x-1 shadow-sm hover:bg-indigo-100 transition">
+              <span>➕ 快速建立日程事項</span>
+            </button>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-2">
-          <template x-for="todo in getSortedTodos()" :key="todo.id">
-            <div class="p-4 rounded-xl border transition text-sm flex flex-col justify-between space-y-3 shadow-sm" :class="getTaskStatusClass(todo)">
-              <div class="flex items-start space-x-3">
-                <input type="checkbox" :checked="todo.completed" @change="toggleTodo(todo.id)" class="w-4 h-4 rounded text-indigo-600 cursor-pointer mt-0.5">
-                <span class="font-bold text-slate-800 dark:text-slate-100 leading-snug break-words flex-1" x-text="todo.text"></span>
-              </div>
-              
-              <div class="flex items-center justify-between pt-2.5 border-t border-slate-200/60 dark:border-slate-700/60 text-xs font-mono">
-                <div class="flex items-center space-x-1">
-                  <span class="text-[11px] text-slate-500 font-sans">截止:</span>
-                  <input type="date" 
-                         :value="todo.date" 
-                         @change="updateTodoDate(todo.id, $event.target.value)" 
-                         class="text-xs px-2 py-0.5 border rounded-lg dark:bg-slate-700 dark:border-slate-600 font-mono font-bold text-slate-700 dark:text-slate-200 cursor-pointer hover:border-indigo-500 transition">
-                </div>
-                <div class="flex items-center space-x-2">
-                  <span class="px-2.5 py-1 rounded-lg text-xs" :class="getTaskBadge(todo).class" x-text="getTaskBadge(todo).text"></span>
-                  <button @click="deleteTodo(todo.id)" class="text-red-500 hover:underline text-xs font-bold">刪除</button>
-                </div>
+            <div class="bg-slate-50 dark:bg-slate-700/30 p-3.5 rounded-2xl space-y-3 border border-slate-200/60 dark:border-slate-700">
+              <p class="text-xs font-black text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                <span>🎨 日程分類顯示選單</span>
+                <span class="text-[10px] font-normal text-slate-400">勾選過濾</span>
+              </p>
+
+              <div class="space-y-2 text-xs font-medium">
+                <label class="flex items-center space-x-2.5 cursor-pointer hover:opacity-80 transition">
+                  <input type="checkbox" x-model="calFilters.todo" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500">
+                  <span class="w-3 h-3 rounded-full bg-indigo-500 shrink-0"></span>
+                  <span class="text-slate-700 dark:text-slate-200">課堂待辦 (Todos)</span>
+                </label>
+
+                <label class="flex items-center space-x-2.5 cursor-pointer hover:opacity-80 transition">
+                  <input type="checkbox" x-model="calFilters.homework" class="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500">
+                  <span class="w-3 h-3 rounded-full bg-emerald-500 shrink-0"></span>
+                  <span class="text-slate-700 dark:text-slate-200">功課截止 (Homeworks)</span>
+                </label>
+
+                <label class="flex items-center space-x-2.5 cursor-pointer hover:opacity-80 transition">
+                  <input type="checkbox" x-model="calFilters.quiz" class="w-4 h-4 rounded text-purple-600 focus:ring-purple-500">
+                  <span class="w-3 h-3 rounded-full bg-purple-500 shrink-0"></span>
+                  <span class="text-slate-700 dark:text-slate-200">測驗考試 (Quizzes)</span>
+                </label>
+
+                <label class="flex items-center space-x-2.5 cursor-pointer hover:opacity-80 transition">
+                  <input type="checkbox" x-model="calFilters.incident" class="w-4 h-4 rounded text-amber-600 focus:ring-amber-500">
+                  <span class="w-3 h-3 rounded-full bg-amber-500 shrink-0"></span>
+                  <span class="text-slate-700 dark:text-slate-200">課堂紀錄/欠帶 (Incidents)</span>
+                </label>
+
+                <label class="flex items-center space-x-2.5 cursor-pointer hover:opacity-80 transition">
+                  <input type="checkbox" x-model="calFilters.holiday" class="w-4 h-4 rounded text-rose-600 focus:ring-rose-500">
+                  <span class="w-3 h-3 rounded-full bg-rose-500 shrink-0"></span>
+                  <span class="text-slate-700 dark:text-slate-200">香港公眾假期 (Holidays)</span>
+                </label>
               </div>
             </div>
-          </template>
-          <template x-if="todos.length === 0">
-            <div class="col-span-full text-center py-8 text-slate-400 text-sm">目前尚無任何待辦事項，太棒了！🎉</div>
-          </template>
+
+            <!-- 今日簡要統計 -->
+            <div class="p-3 bg-indigo-50/50 dark:bg-slate-700/20 rounded-xl border border-indigo-100 dark:border-slate-700 text-xs space-y-1">
+              <p class="font-bold text-indigo-700 dark:text-indigo-300">💡 提示：</p>
+              <p class="text-slate-500 dark:text-slate-400">點擊網格中的日期可快速新增當日日程，點擊卡片標籤可進行快速切換或管理。</p>
+            </div>
+          </div>
+
+          <!-- 右側：行事曆視角 (網格/列表) -->
+          <div class="md:col-span-3">
+            
+            <!-- 1. 網格視角 (Grid View) -->
+            <div x-show="calViewMode === 'grid'" class="space-y-1">
+              <!-- 星期標頭 (日, 一, 二, 三, 四, 五, 六) -->
+              <div class="grid grid-cols-7 gap-1 text-center text-xs font-bold text-slate-400 pb-1">
+                <div class="text-rose-500">日</div>
+                <div>一</div>
+                <div>二</div>
+                <div>三</div>
+                <div>四</div>
+                <div>五</div>
+                <div class="text-indigo-500">六</div>
+              </div>
+
+              <!-- 月曆 35/42 方格 -->
+              <div class="grid grid-cols-7 gap-1 bg-slate-200 dark:bg-slate-700 p-1 rounded-2xl overflow-hidden">
+                <template x-for="(day, idx) in getCalendarDays()" :key="idx">
+                  <div @click="openAddEventModal(day.dateStr)" 
+                       class="min-h-[105px] bg-white dark:bg-slate-800 p-1.5 flex flex-col justify-between group hover:bg-indigo-50/40 dark:hover:bg-slate-700/50 transition cursor-pointer relative"
+                       :class="[!day.isCurrentMonth ? 'opacity-40 bg-slate-50/50 dark:bg-slate-850' : '']">
+                    
+                    <div class="flex justify-between items-center mb-1">
+                      <span class="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded-full"
+                            :class="day.isToday ? 'bg-indigo-600 text-white shadow' : (day.isCurrentMonth ? 'text-slate-700 dark:text-slate-200' : 'text-slate-400')"
+                            x-text="day.dayNum"></span>
+                      <span class="text-[10px] text-indigo-500 opacity-0 group-hover:opacity-100 font-bold">+</span>
+                    </div>
+
+                    <!-- 當日事件標籤清單 -->
+                    <div class="space-y-1 overflow-y-auto max-h-[75px] scrollbar-none flex-1">
+                      <template x-for="item in day.items" :key="item.id || item.text">
+                        <div @click.stop="handleItemClick(item)" 
+                             class="text-[10px] px-1.5 py-0.5 rounded-md truncate font-medium flex items-center justify-between shadow-2xs hover:scale-102 transition"
+                             :class="item.badgeClass" :title="item.title">
+                          <span class="truncate" x-text="item.title"></span>
+                          <template x-if="item.completed"><span>✓</span></template>
+                        </div>
+                      </template>
+                    </div>
+
+                  </div>
+                </template>
+              </div>
+            </div>
+
+            <!-- 2. 列表視角 (List View / Agenda) -->
+            <div x-show="calViewMode === 'list'" class="space-y-3">
+              <div class="p-3 bg-slate-50 dark:bg-slate-700/30 rounded-xl text-xs font-bold text-slate-500">
+                📋 <span x-text="`${calYear}年 ${calMonthNames[calMonth]}`"></span> 所有日程事項總覽
+              </div>
+
+              <div class="space-y-2 max-h-[600px] overflow-y-auto pr-1">
+                <template x-for="day in getCalendarDays().filter(d => d.items.length > 0)" :key="day.dateStr">
+                  <div class="p-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 space-y-2">
+                    <div class="flex items-center space-x-2 border-b border-slate-100 dark:border-slate-700 pb-1.5">
+                      <span class="font-mono font-bold text-xs bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300 px-2 py-0.5 rounded-md" x-text="day.dateStr"></span>
+                      <span class="text-xs text-slate-400 font-bold" x-text="`(${day.items.length} 個事項)`"></span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <template x-for="item in day.items" :key="item.id || item.text">
+                        <div @click="handleItemClick(item)" class="p-2 rounded-xl text-xs font-bold border flex justify-between items-center cursor-pointer hover:shadow transition" :class="item.badgeClass">
+                          <span class="truncate" x-text="item.title"></span>
+                          <span class="text-[10px] opacity-80" x-text="item.typeName"></span>
+                        </div>
+                      </template>
+                    </div>
+                  </div>
+                </template>
+                <template x-if="getCalendarDays().filter(d => d.items.length > 0).length === 0">
+                  <div class="text-center py-12 text-slate-400 text-xs">本月份尚無任何日程事項或相關分類已被隱藏。</div>
+                </template>
+              </div>
+            </div>
+
+          </div>
         </div>
+
       </div>
 
       <!-- ==================== 2. 按功課管理頁面 ==================== -->
@@ -552,7 +667,6 @@
               <button @click="showSeatingRuleModal = true" class="text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl font-bold">⚙️ 排位進階條件</button>
               <button @click="smartRandomizeSeats()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow transition">🎲 智慧隨機排位</button>
               <button @click="exportSeatingToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-2 rounded-xl shadow">📊 導出座位表 Excel</button>
-              <!-- 修改：將原本的列印改為直接導出 Word 檔 -->
               <button @click="exportSeatingToWord()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-3 py-2 rounded-xl shadow">📄 匯出座位表 Word</button>
             </div>
           </div>
@@ -709,7 +823,9 @@
             <span class="text-indigo-600 dark:text-indigo-400" x-text="currentClass"></span>
           </h2>
           <p class="text-xs text-slate-400 font-medium">每行填寫一位學生姓名（可直接複製 Excel 欄位）：</p>
-          <textarea x-model="batchInputText" rows="5" placeholder="張小明&#10;李大衛&#10;陳家寶" class="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:bg-slate-700 font-medium focus:ring-2 focus:ring-emerald-500"></textarea>
+          <textarea x-model="batchInputText" rows="5" placeholder="張小明
+李大衛
+陳家寶" class="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:bg-slate-700 font-medium focus:ring-2 focus:ring-emerald-500"></textarea>
           <div class="flex justify-between items-center">
             <span class="text-xs text-slate-400 font-medium" x-text="`預計導入 ${calcBatchCount()} 位學生`"></span>
             <button @click="processBatchStudents()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition shadow">開始批量導入</button>
@@ -730,6 +846,83 @@
       </div>
 
     </main>
+  </div>
+
+  <!-- 彈窗 0：快速新增日程事項彈窗 -->
+  <div x-show="showAddEventModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-md shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b pb-2 dark:border-slate-700">
+        <h3 class="font-bold text-lg">➕ 建立新日程事項</h3>
+        <button @click="showAddEventModal = false" class="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+      </div>
+
+      <div class="space-y-3 text-sm">
+        <div>
+          <label class="block text-xs font-bold text-slate-500 mb-1">事項類別</label>
+          <select x-model="newEvent.type" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-700 font-bold">
+            <option value="todo">📌 課堂待辦事項 (Todos)</option>
+            <option value="homework">📚 新增功課死線 (Homework)</option>
+            <option value="quiz">💯 新增測驗考試 (Quiz)</option>
+            <option value="incident">📝 登記課堂事件 (Incident)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-500 mb-1">日期 (Date)</label>
+          <input type="date" x-model="newEvent.date" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-700 font-bold">
+        </div>
+
+        <template x-if="newEvent.type === 'todo'">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">待辦內容</label>
+            <input type="text" x-model="newEvent.text" placeholder="例: 批改 3A 單元小測" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-700 font-bold">
+          </div>
+        </template>
+
+        <template x-if="newEvent.type === 'homework' || newEvent.type === 'quiz'">
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 mb-1">項目名稱</label>
+              <input type="text" x-model="newEvent.text" placeholder="例: 作業三 / 單元二測驗" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-700 font-bold">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-500 mb-1">適用班別</label>
+              <select x-model="newEvent.class" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-700 font-bold">
+                <template x-for="cls in classes" :key="cls">
+                  <option :value="cls" x-text="cls"></option>
+                </template>
+              </select>
+            </div>
+          </div>
+        </template>
+
+        <template x-if="newEvent.type === 'incident'">
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 mb-1">學生</label>
+              <select x-model="newEvent.studentId" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-700 font-bold">
+                <template x-for="s in currentStudents" :key="s.id">
+                  <option :value="s.id" x-text="`${s.no || ''} ${s.name}`"></option>
+                </template>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-500 mb-1">事件類別</label>
+              <select x-model="newEvent.category" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-700 font-bold">
+                <template x-for="cat in presetCategories" :key="cat">
+                  <option :value="cat" x-text="cat"></option>
+                </template>
+              </select>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <div class="flex justify-end space-x-2 pt-2 border-t dark:border-slate-700">
+        <button @click="showAddEventModal = false" class="px-4 py-1.5 text-xs text-slate-500 font-bold">取消</button>
+        <button @click="submitNewEvent()" class="px-5 py-2 text-xs bg-indigo-600 text-white font-bold rounded-xl shadow">儲存事項</button>
+      </div>
+    </div>
   </div>
 
   <!-- 彈窗 1：個人學生檔案 -->
@@ -1011,6 +1204,63 @@ const firebaseConfig = {
         archives: [],
         viewingArchiveId: null,
 
+        // 日曆模組 state
+        calYear: new Date().getFullYear(),
+        calMonth: new Date().getMonth(), // 0 - 11
+        calViewMode: 'grid', // 'grid' | 'list'
+        calMonthNames: ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'],
+        calFilters: {
+          todo: true,
+          homework: true,
+          quiz: true,
+          incident: true,
+          holiday: true
+        },
+        showAddEventModal: false,
+        newEvent: {
+          type: 'todo',
+          text: '',
+          date: '',
+          class: '3A',
+          studentId: '',
+          category: '未帶計算機'
+        },
+
+        // 香港公眾假期資料庫 (2026-2027)
+        hkHolidays: {
+          '2026-01-01': '元旦',
+          '2026-02-17': '農曆年初一',
+          '2026-02-18': '農曆年初二',
+          '2026-02-19': '農曆年初三',
+          '2026-04-03': '耶穌受難節',
+          '2026-04-04': '清明節',
+          '2026-04-06': '復活節星期一',
+          '2026-05-01': '勞動節',
+          '2026-05-24': '佛誕翌日',
+          '2026-06-19': '端午節',
+          '2026-07-01': '香港特區成立紀念日',
+          '2026-09-26': '中秋節翌日',
+          '2026-10-01': '國慶日',
+          '2026-10-18': '重陽節翌日',
+          '2026-12-25': '聖誕節',
+          '2026-12-26': '聖誕節後第一個周日',
+          '2027-01-01': '元旦',
+          '2027-02-06': '農曆年初一',
+          '2027-02-08': '農曆年初二',
+          '2027-02-09': '農曆年初三',
+          '2027-03-26': '耶穌受難節',
+          '2027-03-29': '復活節星期一',
+          '2027-04-05': '清明節',
+          '2027-05-01': '勞動節',
+          '2027-05-13': '佛誕',
+          '2027-06-09': '端午節',
+          '2027-07-01': '香港特區成立紀念日',
+          '2027-09-16': '中秋節翌日',
+          '2027-10-01': '國慶日',
+          '2027-10-08': '重陽節',
+          '2027-12-25': '聖誕節'
+        },
+
         todos: [],
         todoSortMode: 'date',
         quickTodoText: '',
@@ -1072,6 +1322,13 @@ const firebaseConfig = {
           return `${year}-${month}-${day}`;
         },
 
+        formatDateStr(d) {
+          const year = d.getFullYear();
+          const month = String(d.getMonth() + 1).padStart(2, '0');
+          const day = String(d.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        },
+
         resetState() {
           this.classes = ['3A', '3B'];
           this.currentClass = '3A';
@@ -1125,6 +1382,230 @@ const firebaseConfig = {
 
         logoutGoogle() {
           auth.signOut();
+        },
+
+        // 日曆功能邏輯：Prev, Next, Today
+        prevMonth() {
+          if (this.calMonth === 0) {
+            this.calMonth = 11;
+            this.calYear--;
+          } else {
+            this.calMonth--;
+          }
+        },
+
+        nextMonth() {
+          if (this.calMonth === 11) {
+            this.calMonth = 0;
+            this.calYear++;
+          } else {
+            this.calMonth++;
+          }
+        },
+
+        goToday() {
+          const now = new Date();
+          this.calYear = now.getFullYear();
+          this.calMonth = now.getMonth();
+        },
+
+        // 計算 Google Calendar 月網格 (35或42格)
+        getCalendarDays() {
+          const year = this.calYear;
+          const month = this.calMonth;
+          const firstDayOfMonth = new Date(year, month, 1);
+          const lastDayOfMonth = new Date(year, month + 1, 0);
+          
+          const startDayOfWeek = firstDayOfMonth.getDay(); // 0(日) - 6(六)
+          const daysInMonth = lastDayOfMonth.getDate();
+          
+          const prevMonthLastDay = new Date(year, month, 0).getDate();
+          
+          let days = [];
+          
+          // 前一個月的尾端天數
+          for (let i = startDayOfWeek - 1; i >= 0; i--) {
+            const d = prevMonthLastDay - i;
+            const prevMonthDate = new Date(year, month - 1, d);
+            const dateStr = this.formatDateStr(prevMonthDate);
+            days.push({
+              dateStr,
+              dayNum: d,
+              isCurrentMonth: false,
+              isToday: dateStr === this.getLocalToday(),
+              items: this.getCalendarItemsForDate(dateStr)
+            });
+          }
+          
+          // 當月天數
+          for (let d = 1; d <= daysInMonth; d++) {
+            const currDate = new Date(year, month, d);
+            const dateStr = this.formatDateStr(currDate);
+            days.push({
+              dateStr,
+              dayNum: d,
+              isCurrentMonth: true,
+              isToday: dateStr === this.getLocalToday(),
+              items: this.getCalendarItemsForDate(dateStr)
+            });
+          }
+          
+          // 下一個月的開頭補齊格子 (湊齊 35 或 42 格)
+          const totalSoFar = days.length;
+          const targetTotal = totalSoFar > 35 ? 42 : 35;
+          const remaining = targetTotal - totalSoFar;
+          for (let d = 1; d <= remaining; d++) {
+            const nextMonthDate = new Date(year, month + 1, d);
+            const dateStr = this.formatDateStr(nextMonthDate);
+            days.push({
+              dateStr,
+              dayNum: d,
+              isCurrentMonth: false,
+              isToday: dateStr === this.getLocalToday(),
+              items: this.getCalendarItemsForDate(dateStr)
+            });
+          }
+          
+          return days;
+        },
+
+        // 收集單一日期下的所有事件 (按勾選過濾器篩選)
+        getCalendarItemsForDate(dateStr) {
+          let items = [];
+
+          // 1. 課堂待辦 (Todos)
+          if (this.calFilters.todo) {
+            this.todos.filter(t => t.date === dateStr).forEach(t => {
+              items.push({
+                id: t.id,
+                type: 'todo',
+                typeName: '待辦',
+                title: `📌 ${t.text}`,
+                completed: t.completed,
+                badgeClass: t.completed ? 'bg-slate-100 text-slate-400 line-through dark:bg-slate-700' : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/80 dark:text-indigo-200'
+              });
+            });
+          }
+
+          // 2. 功課死線 (Homeworks)
+          if (this.calFilters.homework) {
+            this.homeworks.filter(h => (h.date || this.getLocalToday()) === dateStr).forEach(h => {
+              items.push({
+                id: h.id,
+                type: 'homework',
+                typeName: '功課',
+                title: `📚 [${h.class}] ${h.title}`,
+                badgeClass: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/80 dark:text-emerald-200'
+              });
+            });
+          }
+
+          // 3. 測驗考試 (Quizzes)
+          if (this.calFilters.quiz) {
+            this.quizzes.filter(q => (q.date || this.getLocalToday()) === dateStr).forEach(q => {
+              items.push({
+                id: q.id,
+                type: 'quiz',
+                typeName: '測驗',
+                title: `💯 [${q.class}] ${q.title}`,
+                badgeClass: 'bg-purple-100 text-purple-800 dark:bg-purple-900/80 dark:text-purple-200'
+              });
+            });
+          }
+
+          // 4. 課堂事件 (Incidents)
+          if (this.calFilters.incident) {
+            this.incidents.filter(i => i.date === dateStr).forEach(i => {
+              items.push({
+                id: i.id,
+                type: 'incident',
+                typeName: '事件',
+                title: `📝 ${this.getStudentName(i.studentId)}: ${i.category}`,
+                badgeClass: 'bg-amber-100 text-amber-800 dark:bg-amber-900/80 dark:text-amber-200'
+              });
+            });
+          }
+
+          // 5. 香港公眾假期 (Holidays)
+          if (this.calFilters.holiday && this.hkHolidays[dateStr]) {
+            items.push({
+              id: 'holiday_' + dateStr,
+              type: 'holiday',
+              typeName: '假期',
+              title: `🎉 ${this.hkHolidays[dateStr]}`,
+              badgeClass: 'bg-rose-100 text-rose-800 dark:bg-rose-900/80 dark:text-rose-200 font-bold'
+            });
+          }
+
+          return items;
+        },
+
+        openAddEventModal(dateStr) {
+          this.newEvent.date = dateStr || this.getLocalToday();
+          this.newEvent.text = '';
+          this.newEvent.type = 'todo';
+          this.newEvent.class = this.currentClass;
+          if (this.currentStudents.length > 0) {
+            this.newEvent.studentId = this.currentStudents[0].id;
+          }
+          this.showAddEventModal = true;
+        },
+
+        submitNewEvent() {
+          if (!this.newEvent.date) return alert('請選擇日期');
+
+          if (this.newEvent.type === 'todo') {
+            if (!this.newEvent.text.trim()) return alert('請輸入待辦內容');
+            this.todos.push({
+              id: 'todo_' + Date.now(),
+              text: this.newEvent.text.trim(),
+              date: this.newEvent.date,
+              completed: false
+            });
+          } else if (this.newEvent.type === 'homework') {
+            if (!this.newEvent.text.trim()) return alert('請輸入功課名稱');
+            this.homeworks.push({
+              id: 'h_' + Date.now(),
+              class: this.newEvent.class,
+              title: this.newEvent.text.trim(),
+              date: this.newEvent.date
+            });
+          } else if (this.newEvent.type === 'quiz') {
+            if (!this.newEvent.text.trim()) return alert('請輸入測驗名稱');
+            this.quizzes.push({
+              id: 'q_' + Date.now(),
+              class: this.newEvent.class,
+              title: this.newEvent.text.trim(),
+              maxScore: 100,
+              date: this.newEvent.date
+            });
+          } else if (this.newEvent.type === 'incident') {
+            if (!this.newEvent.studentId) return alert('請選擇學生');
+            this.incidents.push({
+              id: 'inc_' + Date.now(),
+              studentId: this.newEvent.studentId,
+              date: this.newEvent.date,
+              category: this.newEvent.category,
+              note: ''
+            });
+          }
+
+          this.showAddEventModal = false;
+          this.saveDataToFirebase();
+        },
+
+        handleItemClick(item) {
+          if (item.type === 'todo') {
+            this.toggleTodo(item.id);
+          } else if (item.type === 'homework') {
+            this.switchTab('homework');
+            this.selectedHomeworkId = item.id;
+          } else if (item.type === 'quiz') {
+            this.switchTab('quiz');
+            this.selectedQuizId = item.id;
+          } else if (item.type === 'incident') {
+            this.switchTab('incidents');
+          }
         },
 
         async loadDataFromFirebase() {
@@ -1721,7 +2202,6 @@ const firebaseConfig = {
           XLSX.writeFile(wb, `${this.currentClass}_課室座位表.xlsx`);
         },
 
-        // 核心修改：直接將座位表匯出為 Word 檔案 (.doc)
         exportSeatingToWord() {
           const R = this.seatingGridRows;
           const C = this.seatingGridCols;
@@ -1888,7 +2368,7 @@ const firebaseConfig = {
         addHomeworkPrompt() {
           const title = prompt('請輸入功課名稱：');
           if (title) {
-            const newHw = { id: 'h_' + Date.now(), class: this.currentClass, title };
+            const newHw = { id: 'h_' + Date.now(), class: this.currentClass, title, date: this.getLocalToday() };
             this.homeworks.push(newHw);
             this.selectedHomeworkId = newHw.id;
             this.saveDataToFirebase();
@@ -1985,7 +2465,7 @@ const firebaseConfig = {
         addQuizPrompt() {
           const title = prompt('請輸入測驗名稱 (例如: 單元二小測)：');
           if (title) {
-            const newQ = { id: 'q_' + Date.now(), class: this.currentClass, title, maxScore: 100 };
+            const newQ = { id: 'q_' + Date.now(), class: this.currentClass, title, maxScore: 100, date: this.getLocalToday() };
             this.quizzes.push(newQ);
             this.selectedQuizId = newQ.id;
             this.showQuizChart = false;
