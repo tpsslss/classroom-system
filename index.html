@@ -5,13 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>課堂管理系統</title>
   
-  <!-- Favicon -->
+  <!-- 網頁分頁標籤圖示 (Favicon) -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>">
   
+  <!-- 鎖定滾動條寬度，徹底消除切換頁面/班別時的畫面左右跳動問題 -->
   <style>
     html {
       scrollbar-gutter: stable;
     }
+    /* 隱藏滾動條但保持滾動能力 */
     .no-scrollbar::-webkit-scrollbar {
       display: none;
     }
@@ -26,12 +28,12 @@
   <script>tailwind.config = { darkMode: 'class' }</script>
   <!-- Alpine.js -->
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <!-- SheetJS Excel -->
+  <!-- SheetJS Excel 套件 -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <!-- Chart.js -->
+  <!-- Chart.js 圖表套件 -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- Firebase SDK -->
+  <!-- Firebase SDK (Compat Version) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -67,7 +69,7 @@
           </div>
         </div>
 
-        <!-- 頁籤選單 -->
+        <!-- 頁籤選單與頂部工具按鈕 -->
         <div class="flex flex-wrap items-center gap-2">
           <nav class="flex bg-black/20 p-1 rounded-lg text-sm font-medium">
             <button @click="switchTab('calendar')" :class="currentTab === 'calendar' ? 'bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 shadow' : 'text-white hover:text-white/80'" class="px-3 py-1.5 rounded-md transition">📅 行事曆待辦</button>
@@ -82,6 +84,7 @@
           <button @click="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-2.5 py-1.5 rounded-lg font-bold shadow">📊 Excel</button>
           <button @click="exportJSON()" class="bg-black/30 hover:bg-black/40 text-white text-xs px-2.5 py-1.5 rounded-lg font-bold shadow">💾 備份</button>
           
+          <!-- 彩色圓圈主題選擇圖示 -->
           <div class="flex items-center space-x-1.5 bg-black/20 px-2.5 py-1.5 rounded-xl border border-white/10 shrink-0">
             <template x-for="t in themeOptions" :key="t.key">
               <button @click="setThemeColor(t.key)"
@@ -93,6 +96,7 @@
             </template>
           </div>
 
+          <!-- 切換模式按鈕：固定寬度 w-20 與 shrink-0 防排版跳動 -->
           <button @click="toggleDarkMode()" class="w-20 shrink-0 bg-black/30 hover:bg-black/40 text-white text-xs py-1.5 rounded-lg font-medium border border-white/20 transition text-center">
             <span x-text="isDarkMode ? '☀️ Day' : '🌙 Dark'"></span>
           </button>
@@ -133,6 +137,7 @@
       <!-- ==================== 1. 主頁：Google Calendar 風格行事曆 ==================== -->
       <div x-show="currentTab === 'calendar'" class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 space-y-4">
         
+        <!-- Google Calendar Header 工具列 -->
         <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-700">
           <div class="flex items-center space-x-3">
             <button @click="goToday()" class="px-3.5 py-1.5 border border-slate-300 dark:border-slate-600 rounded-xl text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-700 transition" title="一鍵跳回今天的月份與日期">今天 Today</button>
@@ -144,6 +149,7 @@
           </div>
 
           <div class="flex items-center space-x-2">
+            <!-- 視角切換：網格 vs 列表 -->
             <div class="bg-slate-100 dark:bg-slate-700 p-1 rounded-xl flex text-xs font-bold">
               <button @click="calViewMode = 'grid'" :class="calViewMode === 'grid' ? 'bg-white dark:bg-slate-800 shadow text-indigo-600 dark:text-indigo-400' : 'text-slate-500'" class="px-3 py-1 rounded-md transition">📅 網格視角</button>
               <button @click="calViewMode = 'list'" :class="calViewMode === 'list' ? 'bg-white dark:bg-slate-800 shadow text-indigo-600 dark:text-indigo-400' : 'text-slate-500'" class="px-3 py-1 rounded-md transition">📋 列表視角</button>
@@ -152,9 +158,10 @@
           </div>
         </div>
 
+        <!-- 側邊欄與行事曆主體區塊 -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
           
-          <!-- 左側分類選單 -->
+          <!-- 左側：分類色彩勾選與管理 (Google Calendar Sidebar) -->
           <div class="space-y-4 md:col-span-1 border-r border-slate-100 dark:border-slate-700/60 pr-3">
             <button @click="openCreateEventModal(getLocalToday())" class="w-full py-2.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 rounded-xl text-xs font-bold flex items-center justify-center space-x-1 shadow-sm hover:bg-indigo-100 transition">
               <span>➕ 建立新日程事項</span>
@@ -166,6 +173,7 @@
                 <button @click="showManageCatModal = true" class="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold hover:underline">⚙️ 編輯分類/顏色</button>
               </div>
 
+              <!-- 動態分類清單與色塊選擇器 -->
               <div class="space-y-2 text-xs font-medium">
                 <template x-for="cat in calendarCategories" :key="cat.id">
                   <div class="flex items-center justify-between group">
@@ -175,12 +183,14 @@
                       <span class="text-slate-700 dark:text-slate-200 font-bold truncate" x-text="cat.name"></span>
                     </label>
 
+                    <!-- 色彩選擇按鈕 (色盤 Popover 觸發器) -->
                     <div class="relative">
                       <button @click="activeColorPickerCatId = (activeColorPickerCatId === cat.id ? null : cat.id)" 
                               class="w-4 h-4 rounded-full border border-slate-300 opacity-0 group-hover:opacity-100 transition"
                               :style="`background-color: ${cat.color}`"
                               title="更改此分類顏色"></button>
 
+                      <!-- 色盤選單 Modal/Popover (圖片同款多色選單) -->
                       <div x-show="activeColorPickerCatId === cat.id" @click.outside="activeColorPickerCatId = null"
                            class="absolute left-0 mt-1 z-50 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 shadow-2xl w-48 space-y-2">
                         <p class="text-[10px] font-bold text-slate-400">選擇分類代表顏色：</p>
@@ -197,11 +207,20 @@
                 </template>
               </div>
             </div>
+
+            <!-- 今日簡要說明 -->
+            <div class="p-3 bg-indigo-50/50 dark:bg-slate-700/20 rounded-xl border border-indigo-100 dark:border-slate-700 text-xs space-y-1">
+              <p class="font-bold text-indigo-700 dark:text-indigo-300">💡 提示：</p>
+              <p class="text-slate-500 dark:text-slate-400">點擊網格中的日期可建立日程；點擊已有卡片可隨時**修改時間、日期、內容或刪除**。</p>
+            </div>
           </div>
 
-          <!-- 右側行事曆網格 -->
+          <!-- 右側：行事曆視角 (網格/列表) -->
           <div class="md:col-span-3">
+            
+            <!-- 1. 網格視角 (Grid View) -->
             <div x-show="calViewMode === 'grid'" class="space-y-1">
+              <!-- 星期標頭 (日, 一, 二, 三, 四, 五, 六) -->
               <div class="grid grid-cols-7 gap-1 text-center text-xs font-bold text-slate-400 pb-1">
                 <div class="text-rose-500">日</div>
                 <div>一</div>
@@ -212,7 +231,7 @@
                 <div class="text-indigo-500">六</div>
               </div>
 
-              <!-- 月曆網格區塊 -->
+              <!-- 月曆網格 -->
               <div class="grid grid-cols-7 gap-1 bg-slate-200 dark:bg-slate-700 p-1 rounded-2xl overflow-hidden">
                 <template x-for="(day, idx) in getCalendarDays()" :key="idx">
                   <div @click="openCreateEventModal(day.dateStr)" 
@@ -226,7 +245,7 @@
                       <span class="text-[10px] text-indigo-500 opacity-0 group-hover:opacity-100 font-bold">+</span>
                     </div>
 
-                    <!-- 當日卡片：改為實心高對比顏色 (解決圖一太淺色問題) -->
+                    <!-- 當日事件標籤清單（已加深顏色，解決問題 1） -->
                     <div class="space-y-1 overflow-y-auto max-h-[75px] no-scrollbar flex-1">
                       <template x-for="item in day.items" :key="item.id">
                         <div @click.stop="openEditEventModal(item)" 
@@ -243,7 +262,7 @@
               </div>
             </div>
 
-            <!-- 列表視角 -->
+            <!-- 2. 列表視角 (List View / Agenda) -->
             <div x-show="calViewMode === 'list'" class="space-y-3">
               <div class="p-3 bg-slate-50 dark:bg-slate-700/30 rounded-xl text-xs font-bold text-slate-500">
                 📋 <span x-text="`${calYear}年 ${calMonthNames[calMonth]}`"></span> 所有日程事項列表
@@ -268,11 +287,15 @@
                     </div>
                   </div>
                 </template>
+                <template x-if="getCalendarDays().filter(d => d.items.length > 0).length === 0">
+                  <div class="text-center py-12 text-slate-400 text-xs">本月份尚無任何日程事項或相關分類已被隱藏。</div>
+                </template>
               </div>
             </div>
 
           </div>
         </div>
+
       </div>
 
       <!-- ==================== 2. 按功課管理頁面 ==================== -->
@@ -286,6 +309,7 @@
               </template>
             </select>
             <button @click="editHomeworkName()" class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 font-medium">✏️ 編輯</button>
+            <!-- 新增：功課次序調整按鈕（解決問題 5） -->
             <button @click="showReorderHwModal = true" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs px-3 py-1.5 rounded-lg border border-indigo-200 font-bold">↕️ 調整次序</button>
             <button @click="deleteCurrentHomework()" class="bg-slate-100 hover:bg-red-50 dark:bg-slate-700 text-red-600 text-xs px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 font-medium">🗑️ 刪除</button>
           </div>
@@ -411,6 +435,7 @@
       <!-- ==================== 3. 學生整體總覽 ==================== -->
       <div x-show="currentTab === 'overview'" class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 space-y-4">
         <h2 class="text-lg font-bold" x-text="`${currentClass} 班學生交功課整體情況`"></h2>
+        <p class="text-xs text-slate-400">💡 提示：點擊姓名可開啟個人檔案；移動至各狀態數字均可懸浮查看該類別的功課清單。</p>
 
         <div class="overflow-x-auto pb-16">
           <table class="w-full text-left text-sm">
@@ -434,26 +459,86 @@
                   <td class="py-2.5 px-3 relative group">
                     <span class="inline-flex items-center justify-center px-2.5 py-0.5 text-xs font-bold rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 cursor-pointer"
                           x-text="getCompletedHomeworks(student.id).length"></span>
+                    <div :class="sIdx >= (getSortedStudents().length - 4) ? 'bottom-full mb-1' : 'top-full mt-1'"
+                         class="hidden group-hover:block absolute left-0 w-52 bg-slate-900 text-white text-xs rounded-xl p-3 shadow-2xl z-50 pointer-events-none">
+                      <p class="font-bold border-b border-slate-700 pb-1 mb-1">✅ 已完成功課：</p>
+                      <template x-if="getCompletedHomeworks(student.id).length === 0">
+                        <p class="text-slate-400">尚無功課紀錄</p>
+                      </template>
+                      <ul class="list-disc list-inside space-y-0.5 text-slate-200 max-h-32 overflow-y-auto">
+                        <template x-for="hw in getCompletedHomeworks(student.id)" :key="hw.id">
+                          <li x-text="hw.title"></li>
+                        </template>
+                      </ul>
+                    </div>
                   </td>
 
                   <td class="py-2.5 px-3 relative group">
                     <span class="inline-flex items-center justify-center px-2.5 py-0.5 text-xs font-bold rounded-full bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-300 cursor-pointer"
                           x-text="getMissingHomeworks(student.id).length"></span>
+                    <div :class="sIdx >= (getSortedStudents().length - 4) ? 'bottom-full mb-1' : 'top-full mt-1'"
+                         class="hidden group-hover:block absolute left-0 w-52 bg-slate-900 text-white text-xs rounded-xl p-3 shadow-2xl z-50 pointer-events-none">
+                      <p class="font-bold border-b border-slate-700 pb-1 mb-1">❌ 未交功課：</p>
+                      <template x-if="getMissingHomeworks(student.id).length === 0">
+                        <p class="text-slate-400">已全部繳交 ✨</p>
+                      </template>
+                      <ul class="list-disc list-inside space-y-0.5 text-slate-200 max-h-32 overflow-y-auto">
+                        <template x-for="hw in getMissingHomeworks(student.id)" :key="hw.id">
+                          <li x-text="hw.title"></li>
+                        </template>
+                      </ul>
+                    </div>
                   </td>
 
                   <td class="py-2.5 px-3 relative group">
                     <span class="inline-flex items-center justify-center px-2.5 py-0.5 text-xs font-bold rounded-full bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 cursor-pointer"
                           x-text="getCorrectionHomeworks(student.id).length"></span>
+                    <div :class="sIdx >= (getSortedStudents().length - 4) ? 'bottom-full mb-1' : 'top-full mt-1'"
+                         class="hidden group-hover:block absolute left-0 w-52 bg-slate-900 text-white text-xs rounded-xl p-3 shadow-2xl z-50 pointer-events-none">
+                      <p class="font-bold border-b border-slate-700 pb-1 mb-1">⚠️ 待改正功課：</p>
+                      <template x-if="getCorrectionHomeworks(student.id).length === 0">
+                        <p class="text-slate-400">無待改正項目 ✨</p>
+                      </template>
+                      <ul class="list-disc list-inside space-y-0.5 text-slate-200 max-h-32 overflow-y-auto">
+                        <template x-for="hw in getCorrectionHomeworks(student.id)" :key="hw.id">
+                          <li x-text="hw.title"></li>
+                        </template>
+                      </ul>
+                    </div>
                   </td>
 
                   <td class="py-2.5 px-3 relative group">
                     <span class="inline-flex items-center justify-center px-2.5 py-0.5 text-xs font-bold rounded-full bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300 cursor-pointer"
                           x-text="getPendingHomeworks(student.id).length"></span>
+                    <div :class="sIdx >= (getSortedStudents().length - 4) ? 'bottom-full mb-1' : 'top-full mt-1'"
+                         class="hidden group-hover:block absolute left-0 w-52 bg-slate-900 text-white text-xs rounded-xl p-3 shadow-2xl z-50 pointer-events-none">
+                      <p class="font-bold border-b border-slate-700 pb-1 mb-1">⏳ 待補交功課：</p>
+                      <template x-if="getPendingHomeworks(student.id).length === 0">
+                        <p class="text-slate-400">無待補交項目 ✨</p>
+                      </template>
+                      <ul class="list-disc list-inside space-y-0.5 text-slate-200 max-h-32 overflow-y-auto">
+                        <template x-for="hw in getPendingHomeworks(student.id)" :key="hw.id">
+                          <li x-text="hw.title"></li>
+                        </template>
+                      </ul>
+                    </div>
                   </td>
 
                   <td class="py-2.5 px-3 relative group">
                     <span class="inline-flex items-center justify-center px-2.5 py-0.5 text-xs font-bold rounded-full bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300 cursor-pointer"
                           x-text="getAbsentHomeworks(student.id).length"></span>
+                    <div :class="sIdx >= (getSortedStudents().length - 4) ? 'bottom-full mb-1' : 'top-full mt-1'"
+                         class="hidden group-hover:block absolute left-0 w-52 bg-slate-900 text-white text-xs rounded-xl p-3 shadow-2xl z-50 pointer-events-none">
+                      <p class="font-bold border-b border-slate-700 pb-1 mb-1">🌙 缺席時的功課：</p>
+                      <template x-if="getAbsentHomeworks(student.id).length === 0">
+                        <p class="text-slate-400">無缺席紀錄 ✨</p>
+                      </template>
+                      <ul class="list-disc list-inside space-y-0.5 text-slate-200 max-h-32 overflow-y-auto">
+                        <template x-for="hw in getAbsentHomeworks(student.id)" :key="hw.id">
+                          <li x-text="hw.title"></li>
+                        </template>
+                      </ul>
+                    </div>
                   </td>
                 </tr>
               </template>
@@ -473,6 +558,7 @@
               </template>
             </select>
             <button @click="editQuizPrompt()" class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 font-medium">✏️ 編輯</button>
+            <!-- 新增：測驗次序調整按鈕（解決問題 5） -->
             <button @click="showReorderQuizModal = true" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs px-3 py-1.5 rounded-lg border border-indigo-200 font-bold">↕️ 調整次序</button>
             <button @click="deleteCurrentQuiz()" class="bg-slate-100 hover:bg-red-50 dark:bg-slate-700 text-red-600 text-xs px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 font-medium">🗑️ 刪除</button>
           </div>
@@ -523,6 +609,12 @@
                 <template x-if="showQuizChart">
                   <div class="w-full relative min-h-[220px]">
                     <canvas id="quizChartCanvas" style="display: block; width: 100%; height: 220px;"></canvas>
+                  </div>
+                </template>
+
+                <template x-if="!showQuizChart">
+                  <div class="bg-slate-50 dark:bg-slate-700/30 rounded-2xl p-6 text-center text-slate-400 text-xs border border-dashed border-slate-200 dark:border-slate-700">
+                    💡 登記完分數後，點擊右上方「產生 / 刷新統計圖表」按鈕即可即時生成圖表！
                   </div>
                 </template>
               </div>
@@ -583,10 +675,15 @@
           <div class="flex flex-wrap justify-between items-center gap-3">
             <div>
               <h2 class="text-lg font-bold" x-text="`🪑 ${currentClass} 班課室座位表`"></h2>
+              <p class="text-xs text-slate-400 font-medium">💡 提示：按住座位卡片可拖動換位；點擊卡片上的 📌 圖示可「釘選固定」位置，智慧隨機排位時該學生會保持不動！</p>
             </div>
+            
             <div class="flex flex-wrap items-center gap-2">
               <button @click="showGridConfigModal = true" class="text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl font-bold">📐 自訂座位行列規模</button>
+              <button @click="showSeatingRuleModal = true" class="text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl font-bold">⚙️ 排位進階條件</button>
               <button @click="smartRandomizeSeats()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow transition">🎲 智慧隨機排位</button>
+              <button @click="exportSeatingToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-2 rounded-xl shadow">📊 導出座位表 Excel</button>
+              <button @click="exportSeatingToWord()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-3 py-2 rounded-xl shadow">📄 匯出座位表 Word</button>
             </div>
           </div>
 
@@ -598,16 +695,44 @@
                :style="`grid-template-columns: repeat(${seatingGridCols}, minmax(110px, 1fr));`">
             <template x-for="r in seatingGridRows" :key="r">
               <template x-for="c in seatingGridCols" :key="c">
-                <div class="p-2.5 bg-white dark:bg-slate-800 border rounded-2xl flex flex-col justify-between items-center h-24 shadow-sm relative transition-all duration-150 border-slate-200 dark:border-slate-700">
-                  <span class="text-[10px] text-slate-400 font-mono" x-text="`R${r}-C${c}`"></span>
+                <div class="p-2.5 bg-white dark:bg-slate-800 border rounded-2xl flex flex-col justify-between items-center h-24 shadow-sm relative transition-all duration-150"
+                     :class="[
+                       getSeatStudent(r, c) ? (isSeatPinned(r, c) ? 'border-amber-400 dark:border-amber-500 ring-2 ring-amber-400/30' : 'border-slate-200 dark:border-slate-700') + ' cursor-grab active:cursor-grabbing hover:border-indigo-500 hover:shadow-md' : 'border-dashed border-slate-300 dark:border-slate-700/60 hover:border-indigo-400'
+                     ]"
+                     :draggable="getSeatStudent(r, c) ? 'true' : 'false'"
+                     @dragstart="handleSeatDragStart($event, r, c)"
+                     @dragover.prevent=""
+                     @drop="handleSeatDrop($event, r, c)">
+                  
+                  <div class="w-full flex justify-between items-center pointer-events-none">
+                    <span class="text-[10px] text-slate-400 font-mono" x-text="`R${r}-C${c}`"></span>
+                  </div>
+
                   <template x-if="getSeatStudent(r, c)">
-                    <div class="text-center w-full">
+                    <button @click.stop="togglePinSeat(r, c)" 
+                            :title="isSeatPinned(r, c) ? '已釘選此座位（智慧排位時固定不動）' : '點擊釘選固定此座位'"
+                            :class="isSeatPinned(r, c) ? 'bg-amber-500 text-white shadow scale-105' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 hover:text-amber-500'"
+                            class="absolute top-1.5 right-1.5 text-[10px] px-1.5 py-0.5 rounded-md transition border border-slate-200 dark:border-slate-600 font-bold z-10">
+                      📌
+                    </button>
+                  </template>
+
+                  <template x-if="getSeatStudent(r, c)">
+                    <div class="text-center w-full pointer-events-none">
                       <p class="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400" x-text="`#${getSeatStudent(r, c).no || '-'}`"></p>
                       <span class="text-xs font-bold text-slate-800 dark:text-slate-100 truncate max-w-full block mx-auto" x-text="getSeatStudent(r, c).name"></span>
+                      
+                      <div class="flex justify-center flex-wrap gap-0.5 mt-1">
+                        <template x-if="isSeatPinned(r, c)"><span class="text-[9px] bg-amber-100 text-amber-800 px-1 rounded font-bold">📌 釘選</span></template>
+                        <template x-if="getSeatStudent(r, c).isTall"><span class="text-[9px] bg-blue-100 text-blue-700 px-1 rounded">高</span></template>
+                        <template x-if="getSeatStudent(r, c).frontRow"><span class="text-[9px] bg-amber-100 text-amber-700 px-1 rounded">前</span></template>
+                        <template x-if="getSeatStudent(r, c).backRow"><span class="text-[9px] bg-purple-100 text-purple-700 px-1 rounded">後</span></template>
+                      </div>
                     </div>
                   </template>
+
                   <template x-if="!getSeatStudent(r, c)">
-                    <span class="text-xs text-slate-300 dark:text-slate-600 font-medium">空位</span>
+                    <span class="text-xs text-slate-300 dark:text-slate-600 font-medium pointer-events-none">空位</span>
                   </template>
                 </div>
               </template>
@@ -620,7 +745,10 @@
       <div x-show="currentTab === 'incidents'" class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 space-y-4">
         <div class="flex flex-wrap justify-between items-center gap-2">
           <h2 class="text-lg font-bold">📋 課堂事件與欠帶紀錄</h2>
-          <button @click="showIncidentModal = true" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow">+ 登記新事件</button>
+          <div class="flex space-x-2">
+            <button @click="showCategoryModal = true" class="text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 px-3 py-2 rounded-xl font-bold">⚙️ 管理事件選項</button>
+            <button @click="showIncidentModal = true" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow">+ 登記新事件</button>
+          </div>
         </div>
 
         <table class="w-full text-left text-sm">
@@ -651,14 +779,84 @@
         </table>
       </div>
 
-      <!-- ==================== 7. 設定與歸檔 ==================== -->
+      <!-- ==================== 7. 設定與歷史學期歸檔 ==================== -->
       <div x-show="currentTab === 'settings'" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
         <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-4 lg:col-span-2">
           <div class="flex justify-between items-center border-b pb-3 dark:border-slate-700">
             <div>
               <h2 class="text-lg font-bold">📦 歷史學期歸檔管理</h2>
+              <p class="text-xs text-slate-400">把舊學期資料封存，保持當前系統輕量與高速運作。</p>
             </div>
             <button @click="archiveCurrentSemesterPrompt()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow">📦 歸檔當前學期</button>
+          </div>
+
+          <div class="space-y-2">
+            <p class="text-xs font-bold text-slate-500">已封存學期列表：</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <template x-for="arch in archives" :key="arch.id">
+                <div class="p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/40 space-y-2">
+                  <div class="flex justify-between items-start">
+                    <span class="font-bold text-sm" x-text="arch.semesterName"></span>
+                    <span class="text-[10px] bg-slate-200 dark:bg-slate-600 px-2 py-0.5 rounded font-mono" x-text="arch.archivedAt"></span>
+                  </div>
+                  <div class="flex justify-between items-center pt-2">
+                    <button @click="restoreFromArchive(arch.id)" class="bg-amber-500 hover:bg-amber-600 text-white text-xs px-3 py-1.5 rounded-lg font-bold">📖 查閱此學期</button>
+                    <button @click="deleteArchive(arch.id)" class="text-red-500 hover:underline text-xs">刪除封存</button>
+                  </div>
+                </div>
+              </template>
+              <template x-if="archives.length === 0">
+                <p class="text-xs text-slate-400 col-span-full py-2">目前尚無歸檔封存學期。</p>
+              </template>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-5">
+          <h2 class="text-lg font-bold">1. 班別管理</h2>
+          <div class="flex space-x-2">
+            <input type="text" x-model="newClassName" placeholder="輸入新班別 (例: 5C)" class="flex-1 px-4 py-2 border rounded-xl text-sm dark:bg-slate-700 border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-indigo-500">
+            <button @click="addClass()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition shadow">新增班別</button>
+          </div>
+
+          <div>
+            <p class="text-xs font-semibold text-slate-400 mb-2">既有班別：</p>
+            <div class="flex flex-wrap gap-2">
+              <template x-for="cls in classes" :key="cls">
+                <span class="inline-flex items-center px-3 py-1 rounded-xl text-sm font-bold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 space-x-1">
+                  <span x-text="cls"></span>
+                  <button @click="removeClass(cls)" class="text-slate-400 hover:text-red-500 font-bold ml-1">✕</button>
+                </span>
+              </template>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-4">
+          <h2 class="text-lg font-bold">
+            <span>2. 批量導入學生名單到 </span>
+            <span class="text-indigo-600 dark:text-indigo-400" x-text="currentClass"></span>
+          </h2>
+          <p class="text-xs text-slate-400 font-medium">每行填寫一位學生姓名（可直接複製 Excel 欄位）：</p>
+          <textarea x-model="batchInputText" rows="5" placeholder="張小明
+李大衛
+陳家寶" class="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:bg-slate-700 font-medium focus:ring-2 focus:ring-emerald-500"></textarea>
+          <div class="flex justify-between items-center">
+            <span class="text-xs text-slate-400 font-medium" x-text="`預計導入 ${calcBatchCount()} 位學生`"></span>
+            <button @click="processBatchStudents()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition shadow">開始批量導入</button>
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-4 lg:col-span-2">
+          <h2 class="text-lg font-bold">3. 資料庫離線備份與還原 (JSON)</h2>
+          <p class="text-xs text-slate-400">您可以下載 JSON 備份檔案存放在電腦，或者上傳舊有備份檔案進行還原。</p>
+          <div class="flex flex-wrap gap-3">
+            <button @click="exportJSON()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow">💾 下載 JSON 備份檔</button>
+            <label class="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 text-xs font-bold px-4 py-2.5 rounded-xl shadow cursor-pointer border border-slate-300 dark:border-slate-600">
+              <span>📥 匯入 JSON 備份檔</span>
+              <input type="file" accept=".json" @change="importJSON($event)" class="hidden">
+            </label>
           </div>
         </div>
       </div>
@@ -677,7 +875,7 @@
       <div class="space-y-3 text-sm">
         <div>
           <label class="block text-xs font-bold text-slate-500 mb-1">日程內容 / 標題</label>
-          <input type="text" x-model="activeEvent.title" placeholder="例如: 3A 開會 / 閱讀測驗" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-700 font-bold focus:ring-2 focus:ring-indigo-500">
+          <input type="text" x-model="activeEvent.title" placeholder="例如: 3A 開會 / 單元測驗" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-700 font-bold focus:ring-2 focus:ring-indigo-500">
         </div>
 
         <div>
@@ -689,7 +887,7 @@
           </select>
         </div>
 
-        <!-- 若分類是功課或測驗，允許選擇對應班別以同步至功課/測驗模組 (解決問題 2) -->
+        <!-- 恢復：選擇同步班別（解決問題 2） -->
         <div x-show="activeEvent.categoryId === 'cat_hw' || activeEvent.categoryId === 'cat_quiz'">
           <label class="block text-xs font-bold text-indigo-600 dark:text-indigo-400 mb-1">同步建立至班別：</label>
           <select x-model="activeEvent.targetClass" class="w-full px-3 py-1.5 border rounded-xl bg-indigo-50 dark:bg-slate-700 font-bold text-indigo-900 dark:text-indigo-200">
@@ -704,7 +902,7 @@
           <input type="date" x-model="activeEvent.date" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-700 font-bold">
         </div>
 
-        <!-- 時間設定區塊：解決問題 3 & 解決問題 4 (3點擊自動關閉時間選單) -->
+        <!-- 時間設定區塊：解決問題 3 & 4 -->
         <div class="p-3 bg-slate-50 dark:bg-slate-700/40 rounded-xl space-y-2 border border-slate-200 dark:border-slate-600">
           <label class="flex items-center space-x-2 cursor-pointer">
             <input type="checkbox" x-model="activeEvent.isAllDay" class="w-4 h-4 rounded text-indigo-600">
@@ -712,7 +910,7 @@
           </label>
 
           <div x-show="!activeEvent.isAllDay" class="grid grid-cols-2 gap-3 pt-2">
-            <!-- 開始時間按鈕與快選 Popover -->
+            <!-- 開始時間快選按鈕 -->
             <div class="relative">
               <label class="block text-[10px] text-slate-400 font-bold mb-1">開始時間</label>
               <button @click="openCustomTimePicker('startTime')" 
@@ -722,7 +920,7 @@
               </button>
             </div>
 
-            <!-- 結束時間按鈕與快選 Popover -->
+            <!-- 結束時間快選按鈕 -->
             <div class="relative">
               <label class="block text-[10px] text-slate-400 font-bold mb-1">結束時間</label>
               <button @click="openCustomTimePicker('endTime')" 
@@ -749,7 +947,7 @@
     </div>
   </div>
 
-  <!-- 彈窗 0B：三步驟流暢時間選擇器 Modal (解決問題 4：點擊完自動關閉) -->
+  <!-- 彈窗 0B：三步驟時間選擇器 Modal (解決問題 4) -->
   <div x-show="showTimePickerModal" class="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-60">
     <div @click.outside="showTimePickerModal = false" class="bg-white dark:bg-slate-800 rounded-2xl p-4 w-full max-w-xs shadow-2xl space-y-3 border border-slate-200 dark:border-slate-700">
       <div class="flex justify-between items-center border-b pb-2 dark:border-slate-700">
@@ -779,7 +977,7 @@
         </div>
       </div>
 
-      <!-- 步驟 3：選擇 分鐘 (點完立刻儲存並關閉) -->
+      <!-- 步驟 3：選擇 分鐘 (點完立刻關閉) -->
       <div x-show="tpStep === 'minute'" class="space-y-2">
         <div class="flex justify-between items-center">
           <p class="text-xs font-bold text-slate-500">3. 請選擇分鐘：</p>
@@ -888,6 +1086,50 @@
           <button @click="showStudentProfileModal = false" class="text-slate-400 hover:text-slate-600 font-bold text-lg">✕</button>
         </div>
 
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+          <div class="p-2.5 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/40 rounded-xl">
+            <p class="text-indigo-500 font-bold">個人平均分</p>
+            <p class="text-base font-black text-indigo-700 dark:text-indigo-300 mt-0.5" x-text="`${getStudentQuizStats(profileStudent.id).avg}%`"></p>
+          </div>
+          <div class="p-2.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/40 rounded-xl">
+            <p class="text-emerald-500 font-bold">最高分 (%)</p>
+            <p class="text-base font-black text-emerald-700 dark:text-emerald-300 mt-0.5" x-text="`${getStudentQuizStats(profileStudent.id).max}%`"></p>
+          </div>
+          <div class="p-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/40 rounded-xl">
+            <p class="text-amber-500 font-bold">最低分 (%)</p>
+            <p class="text-base font-black text-amber-700 dark:text-amber-300 mt-0.5" x-text="`${getStudentQuizStats(profileStudent.id).min}%`"></p>
+          </div>
+          <div class="p-2.5 bg-purple-50 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-900/40 rounded-xl">
+            <p class="text-purple-500 font-bold">與上次比較</p>
+            <p class="text-base font-black mt-0.5" 
+               :class="getStudentQuizStats(profileStudent.id).lastVsPrev.startsWith('+') ? 'text-emerald-600' : (getStudentQuizStats(profileStudent.id).lastVsPrev.startsWith('-') ? 'text-red-600' : 'text-slate-500')"
+               x-text="getStudentQuizStats(profileStudent.id).lastVsPrev"></p>
+            <p class="text-[9px] text-slate-400" x-text="getStudentQuizStats(profileStudent.id).statusText"></p>
+          </div>
+        </div>
+
+        <div class="space-y-2 border-t pt-3 dark:border-slate-700">
+          <p class="text-xs font-bold text-slate-500">📈 個人歷次測驗分數趨勢折線圖：</p>
+          <div class="w-full relative min-h-[180px] bg-slate-50 dark:bg-slate-900/50 rounded-xl p-2">
+            <canvas id="studentTrendChartCanvas" style="display: block; width: 100%; height: 180px;"></canvas>
+          </div>
+        </div>
+
+        <div class="space-y-2 border-t pt-3 dark:border-slate-700">
+          <p class="text-xs font-bold text-slate-500">📝 課堂紀錄歷史：</p>
+          <div class="max-h-28 overflow-y-auto space-y-1">
+            <template x-for="log in getStudentIncidents(profileStudent.id)" :key="log.id">
+              <div class="flex items-center justify-between text-xs p-2 rounded-lg bg-amber-50/60 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/40">
+                <div class="space-x-2">
+                  <span class="font-mono text-slate-400" x-text="log.date"></span>
+                  <span class="font-bold text-amber-800 dark:text-amber-300" x-text="log.category"></span>
+                </div>
+                <span class="text-slate-500 truncate max-w-[150px]" x-text="log.note || '-'"></span>
+              </div>
+            </template>
+          </div>
+        </div>
+
         <div class="flex justify-end pt-2 border-t">
           <button @click="showStudentProfileModal = false" class="px-5 py-2 text-xs bg-indigo-600 text-white font-bold rounded-xl shadow">關閉視窗</button>
         </div>
@@ -915,11 +1157,58 @@
     </div>
   </div>
 
+  <!-- 彈窗 3：排位進階條件設定 -->
+  <div x-show="showSeatingRuleModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-lg shadow-2xl space-y-4">
+      <h3 class="font-bold text-lg" x-text="`⚙️ 設定 ${currentClass} 班學生座位排位條件`"></h3>
+      
+      <div class="max-h-64 overflow-y-auto space-y-3 pr-1">
+        <template x-for="s in currentStudents" :key="s.id">
+          <div class="p-3 bg-slate-50 dark:bg-slate-700/40 rounded-xl space-y-2 border border-slate-100 dark:border-slate-700">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-sm" x-text="`#${s.no || '-'} ${s.name}`"></span>
+              <div class="flex items-center space-x-2 text-xs">
+                <label class="flex items-center space-x-1 cursor-pointer">
+                  <input type="checkbox" x-model="s.isTall" class="rounded text-indigo-600">
+                  <span>高個子(避前排)</span>
+                </label>
+                <label class="flex items-center space-x-1 cursor-pointer">
+                  <input type="checkbox" x-model="s.frontRow" class="rounded text-indigo-600">
+                  <span>前排優先</span>
+                </label>
+                <label class="flex items-center space-x-1 cursor-pointer">
+                  <input type="checkbox" x-model="s.backRow" class="rounded text-indigo-600">
+                  <span>後排優先</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="text-xs">
+              <span class="text-slate-400 font-medium">避開同桌同學（矛盾不相鄰）：</span>
+              <div class="flex flex-wrap gap-1 mt-1">
+                <template x-for="other in currentStudents.filter(o => o.id !== s.id)" :key="other.id">
+                  <button @click="toggleAvoidStudent(s, other.id)" 
+                          :class="(s.avoidIds || []).includes(other.id) ? 'bg-red-500 text-white font-bold' : 'bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-300'"
+                          class="px-2 py-0.5 rounded text-[10px] transition" x-text="other.name"></button>
+                </template>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <div class="flex justify-end pt-2 border-t">
+        <button @click="saveDataToFirebase(); showSeatingRuleModal = false" class="px-5 py-2 text-xs bg-indigo-600 text-white font-bold rounded-xl shadow">儲存條件設定</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 彈窗 4：編輯學生名單 -->
   <div x-show="showStudentModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-lg shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-2">
         <h3 class="font-bold text-lg" x-text="`✏️ 編輯 ${currentClass} 班學生名單與學號`"></h3>
+        <button @click="autoResequenceStudentNos()" class="text-xs bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-300 px-2.5 py-1 rounded-lg font-bold">✨ 一鍵順排學號</button>
       </div>
 
       <div class="max-h-72 overflow-y-auto space-y-2 pr-1">
@@ -940,20 +1229,59 @@
     </div>
   </div>
 
-  <!-- 彈窗 5：測驗合格標準設定 -->
+  <!-- 彈窗 5：測驗合格標準與等級區段設定 -->
   <div x-show="showQuizConfigModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4">
       <h3 class="font-bold text-lg border-b pb-2 dark:border-slate-700">⚙️ 設定測驗合格標準與成績區段</h3>
       
       <div class="space-y-3 text-sm">
         <div>
-          <label class="block text-xs font-bold text-emerald-600 dark:text-emerald-400 mb-1">及格標準百分比 (%)</label>
+          <label class="block text-xs font-bold text-emerald-600 dark:text-emerald-400 mb-1">1. 及格標準百分比 (%)</label>
           <input type="number" x-model.number="quizConfig.passPct" @wheel="$event.target.blur()" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-700 font-bold">
+        </div>
+
+        <div class="border-t pt-2 dark:border-slate-700 space-y-2">
+          <p class="text-xs font-bold text-indigo-600 dark:text-indigo-400">2. 自訂圖表 4 階分數等級門檻 (%)：</p>
+          
+          <div class="grid grid-cols-3 gap-2 text-xs items-center">
+            <span class="text-slate-500 font-bold">中等門檻：</span>
+            <input type="number" x-model.number="quizConfig.lvl2" class="col-span-2 px-2.5 py-1 border rounded-lg dark:bg-slate-700 font-bold" placeholder="70">
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-xs items-center">
+            <span class="text-slate-500 font-bold">良好門檻：</span>
+            <input type="number" x-model.number="quizConfig.lvl3" class="col-span-2 px-2.5 py-1 border rounded-lg dark:bg-slate-700 font-bold" placeholder="80">
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-xs items-center">
+            <span class="text-slate-500 font-bold">優秀門檻：</span>
+            <input type="number" x-model.number="quizConfig.lvl4" class="col-span-2 px-2.5 py-1 border rounded-lg dark:bg-slate-700 font-bold" placeholder="90">
+          </div>
         </div>
       </div>
 
       <div class="flex justify-end pt-2 border-t dark:border-slate-700">
         <button @click="saveDataToFirebase(); showQuizConfigModal = false; showQuizChart = false;" class="px-5 py-2 text-xs bg-indigo-600 text-white font-bold rounded-xl shadow">儲存設定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 彈窗 6：管理課堂事件選項 -->
+  <div x-show="showCategoryModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-sm shadow-2xl space-y-3">
+      <h3 class="font-bold text-lg">⚙️ 管理課堂事件選項</h3>
+      <div class="space-y-2 max-h-48 overflow-y-auto">
+        <template x-for="(cat, idx) in presetCategories" :key="idx">
+          <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-700 p-2 rounded-xl text-sm font-medium">
+            <span x-text="cat"></span>
+            <button @click="removeCategory(idx)" class="text-red-500 text-xs hover:underline">刪除</button>
+          </div>
+        </template>
+      </div>
+      <div class="flex space-x-2 pt-2 border-t dark:border-slate-700">
+        <input type="text" x-model="newCategoryName" placeholder="新增選項 (如: 未帶課本)" class="flex-1 px-3 py-1.5 text-sm border rounded-xl dark:bg-slate-700">
+        <button @click="addCategory()" class="bg-indigo-600 text-white font-bold text-xs px-3 py-1.5 rounded-xl">新增</button>
+      </div>
+      <div class="flex justify-end pt-2">
+        <button @click="showCategoryModal = false" class="px-4 py-1.5 text-xs bg-slate-200 dark:bg-slate-700 font-bold rounded-xl">關閉</button>
       </div>
     </div>
   </div>
@@ -1006,6 +1334,7 @@ const firebaseConfig = {
   appId: "1:640761164042:web:097643fafa0e943831caf3",
   measurementId: "G-W3Y7MH62EC"
 };
+
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
@@ -1021,22 +1350,24 @@ const firebaseConfig = {
         archives: [],
         viewingArchiveId: null,
 
-        // 日曆 state
+        // 日曆模組 state
         calYear: new Date().getFullYear(),
         calMonth: new Date().getMonth(),
         calViewMode: 'grid',
         calMonthNames: ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'],
 
-        // 色盤 (飽和高對比色)
+        // 色盤預設集 (Google Calendar 同款專業色盤)
         colorPalette: [
-          '#d9381e', '#e65100', '#f57c00', '#2e7d32', '#00897b', '#0288d1',
-          '#1565c0', '#3f51b5', '#6a1b9a', '#ad1457', '#c2185b', '#512da8'
+          '#b80672', '#d9381e', '#e65100', '#f57c00', '#fbc02d', '#388e3c',
+          '#00897b', '#0097a7', '#0288d1', '#1565c0', '#3f51b5', '#6a1b9a',
+          '#e91e63', '#d81b60', '#8e24aa', '#5e35b1', '#3949ab', '#1e88e5',
+          '#039be5', '#00acc1', '#00897b', '#43a047', '#7cb342', '#c0ca33'
         ],
 
-        // 分類選單
+        // 可供老師完全自訂名稱與顏色的分類清單
         calendarCategories: [
           { id: 'cat_todo', name: '課堂待辦', color: '#3f51b5', visible: true },
-          { id: 'cat_hw', name: '功課截止', color: '#2e7d32', visible: true },
+          { id: 'cat_hw', name: '功課截止', color: '#388e3c', visible: true },
           { id: 'cat_quiz', name: '測驗考試', color: '#6a1b9a', visible: true },
           { id: 'cat_incident', name: '課堂紀錄', color: '#f57c00', visible: true },
           { id: 'cat_holiday', name: '公眾假期', color: '#d9381e', visible: true }
@@ -1047,6 +1378,7 @@ const firebaseConfig = {
         showReorderHwModal: false,
         showReorderQuizModal: false,
 
+        // 獨立日程事件資料庫
         calendarEvents: [],
 
         // 日程修改/建立彈窗控制
@@ -1063,7 +1395,7 @@ const firebaseConfig = {
           endTime: '10:00'
         },
 
-        // 快選時間 Modal state (解決圖二問題)
+        // 三步驟快選時間 Modal state (解決圖二問題)
         showTimePickerModal: false,
         tpTargetField: 'startTime',
         tpStep: 'period',
@@ -1100,7 +1432,8 @@ const firebaseConfig = {
           if (this.tpPeriod === '上午' && h === 12) h = 0;
           const finalTime = `${String(h).padStart(2, '0')}:${m}`;
           this.activeEvent[this.tpTargetField] = finalTime;
-          this.showTimePickerModal = false; // 點擊完第三下自動關閉！
+          this.activeEvent.isAllDay = false; // 設定時間後自動取消全日活動 (解決問題 3)
+          this.showTimePickerModal = false;  // 點擊完第三下自動關閉選單 (解決問題 4)
         },
 
         formatDisplayTime(timeStr) {
@@ -1114,14 +1447,22 @@ const firebaseConfig = {
           return `${period} ${String(dispH).padStart(2, '0')}:${mStr || '00'}`;
         },
 
-        // 香港公眾假期
+        // 香港公眾假期資料庫 (2026-2027)
         hkHolidays: {
           '2026-01-01': '元旦', '2026-02-17': '農曆年初一', '2026-02-18': '農曆年初二', '2026-02-19': '農曆年初三',
           '2026-04-03': '耶穌受難節', '2026-04-04': '清明節', '2026-04-06': '復活節星期一', '2026-05-01': '勞動節',
           '2026-05-24': '佛誕翌日', '2026-06-19': '端午節', '2026-07-01': '特區成立紀念日', '2026-09-26': '中秋節翌日',
           '2026-10-01': '國慶日', '2026-10-18': '重陽節翌日', '2026-12-25': '聖誕節', '2026-12-26': '聖誕節翌日',
-          '2027-01-01': '元旦', '2027-02-06': '農曆年初一', '2027-02-08': '農曆年初二', '2027-02-09': '農曆年初三'
+          '2027-01-01': '元旦', '2027-02-06': '農曆年初一', '2027-02-08': '農曆年初二', '2027-02-09': '農曆年初三',
+          '2027-03-26': '耶穌受難節', '2027-03-29': '復活節星期一', '2027-04-05': '清明節', '2027-05-01': '勞動節',
+          '2027-05-13': '佛誕', '2027-06-09': '端午節', '2027-07-01': '特區成立紀念日', '2027-09-16': '中秋節翌日',
+          '2027-10-01': '國慶日', '2027-10-08': '重陽節', '2027-12-25': '聖誕節'
         },
+
+        todos: [],
+        todoSortMode: 'date',
+        quickTodoText: '',
+        quickTodoDate: '',
 
         classes: ['3A', '3B'],
         currentClass: '3A',
@@ -1132,24 +1473,35 @@ const firebaseConfig = {
         seatingGridRows: 5,
         seatingGridCols: 6,
         seatingAssignments: {},
+        draggedSeat: null,
 
+        batchInputText: '',
+        showCategoryModal: false,
         showQuizConfigModal: false,
         showStudentModal: false,
         showIncidentModal: false,
         showStudentProfileModal: false,
+        showSeatingRuleModal: false,
         showGridConfigModal: false,
 
         showQuizChart: false,
         profileStudent: null,
         chartInstance: null,
+        studentChartInstance: null,
 
         presetCategories: ['未帶計算機', '未帶課本', '未帶功課', '課堂生事', '遲到'],
+        newCategoryName: '',
+        
         quizConfig: { passPct: 50, lvl2: 70, lvl3: 80, lvl4: 90 },
 
         themeOptions: [
           { key: 'indigo', name: '經典靛藍', color: '#4f46e5', headerBg: 'bg-indigo-600 dark:bg-indigo-900', btnBg: 'bg-indigo-600 text-white shadow-md' },
           { key: 'dark', name: '極簡玄黑', color: '#1e293b', headerBg: 'bg-slate-800 dark:bg-slate-950', btnBg: 'bg-slate-800 text-white shadow-md' },
-          { key: 'emerald', name: '翡翠碧綠', color: '#059669', headerBg: 'bg-emerald-600 dark:bg-emerald-900', btnBg: 'bg-emerald-600 text-white shadow-md' }
+          { key: 'sky', name: '天空湛藍', color: '#0284c7', headerBg: 'bg-sky-600 dark:bg-sky-900', btnBg: 'bg-sky-600 text-white shadow-md' },
+          { key: 'emerald', name: '翡翠碧綠', color: '#059669', headerBg: 'bg-emerald-600 dark:bg-emerald-900', btnBg: 'bg-emerald-600 text-white shadow-md' },
+          { key: 'purple', name: '高雅紫羅蘭', color: '#7c3aed', headerBg: 'bg-purple-600 dark:bg-purple-900', btnBg: 'bg-purple-600 text-white shadow-md' },
+          { key: 'rose', name: '熱情玫瑰紅', color: '#e11d48', headerBg: 'bg-rose-600 dark:bg-rose-900', btnBg: 'bg-rose-600 text-white shadow-md' },
+          { key: 'amber', name: '琥珀暖橙', color: '#d97706', headerBg: 'bg-amber-600 dark:bg-amber-900', btnBg: 'bg-amber-600 text-white shadow-md' }
         ],
 
         students: [],
@@ -1185,13 +1537,21 @@ const firebaseConfig = {
           this.records = {};
           this.quizScores = {};
           this.incidents = [];
+          this.seatingAssignments = {};
+          this.todos = [];
+          this.archives = [];
           this.calendarEvents = [];
           this.selectedHomeworkId = null;
           this.selectedQuizId = null;
+          this.quizConfig = { passPct: 50, lvl2: 70, lvl3: 80, lvl4: 90 };
+          this.quickTodoDate = this.getLocalToday();
+          this.newIncident.date = this.getLocalToday();
         },
 
         initApp() {
+          this.quickTodoDate = this.getLocalToday();
           this.newIncident.date = this.getLocalToday();
+
           if (localStorage.getItem('theme') === 'dark') {
             this.isDarkMode = true;
             document.documentElement.classList.add('dark');
@@ -1224,11 +1584,21 @@ const firebaseConfig = {
         },
 
         prevMonth() {
-          if (this.calMonth === 0) { this.calMonth = 11; this.calYear--; } else { this.calMonth--; }
+          if (this.calMonth === 0) {
+            this.calMonth = 11;
+            this.calYear--;
+          } else {
+            this.calMonth--;
+          }
         },
 
         nextMonth() {
-          if (this.calMonth === 11) { this.calMonth = 0; this.calYear++; } else { this.calMonth++; }
+          if (this.calMonth === 11) {
+            this.calMonth = 0;
+            this.calYear++;
+          } else {
+            this.calMonth++;
+          }
         },
 
         goToday() {
@@ -1260,63 +1630,139 @@ const firebaseConfig = {
           
           const startDayOfWeek = firstDayOfMonth.getDay();
           const daysInMonth = lastDayOfMonth.getDate();
+          
           const prevMonthLastDay = new Date(year, month, 0).getDate();
           let days = [];
           
           for (let i = startDayOfWeek - 1; i >= 0; i--) {
             const d = prevMonthLastDay - i;
-            const dateStr = this.formatDateStr(new Date(year, month - 1, d));
-            days.push({ dateStr, dayNum: d, isCurrentMonth: false, isToday: dateStr === this.getLocalToday(), items: this.getCalendarItemsForDate(dateStr) });
+            const prevMonthDate = new Date(year, month - 1, d);
+            const dateStr = this.formatDateStr(prevMonthDate);
+            days.push({
+              dateStr,
+              dayNum: d,
+              isCurrentMonth: false,
+              isToday: dateStr === this.getLocalToday(),
+              items: this.getCalendarItemsForDate(dateStr)
+            });
           }
           
           for (let d = 1; d <= daysInMonth; d++) {
-            const dateStr = this.formatDateStr(new Date(year, month, d));
-            days.push({ dateStr, dayNum: d, isCurrentMonth: true, isToday: dateStr === this.getLocalToday(), items: this.getCalendarItemsForDate(dateStr) });
+            const currDate = new Date(year, month, d);
+            const dateStr = this.formatDateStr(currDate);
+            days.push({
+              dateStr,
+              dayNum: d,
+              isCurrentMonth: true,
+              isToday: dateStr === this.getLocalToday(),
+              items: this.getCalendarItemsForDate(dateStr)
+            });
           }
           
-          const targetTotal = days.length > 35 ? 42 : 35;
-          const remaining = targetTotal - days.length;
+          const totalSoFar = days.length;
+          const targetTotal = totalSoFar > 35 ? 42 : 35;
+          const remaining = targetTotal - totalSoFar;
           for (let d = 1; d <= remaining; d++) {
-            const dateStr = this.formatDateStr(new Date(year, month + 1, d));
-            days.push({ dateStr, dayNum: d, isCurrentMonth: false, isToday: dateStr === this.getLocalToday(), items: this.getCalendarItemsForDate(dateStr) });
+            const nextMonthDate = new Date(year, month + 1, d);
+            const dateStr = this.formatDateStr(nextMonthDate);
+            days.push({
+              dateStr,
+              dayNum: d,
+              isCurrentMonth: false,
+              isToday: dateStr === this.getLocalToday(),
+              items: this.getCalendarItemsForDate(dateStr)
+            });
           }
+          
           return days;
         },
 
         getCalendarItemsForDate(dateStr) {
           let items = [];
 
-          // 1. 獨立日程
+          // 1. 自訂獨立日程事件
           this.calendarEvents.filter(e => e.date === dateStr).forEach(e => {
             if (this.isCategoryVisible(e.categoryId)) {
-              items.push({ id: e.id, source: 'calendarEvents', title: e.title, date: e.date, categoryId: e.categoryId, isAllDay: e.isAllDay, startTime: e.startTime, endTime: e.endTime });
+              items.push({
+                id: e.id,
+                source: 'calendarEvents',
+                title: e.title,
+                date: e.date,
+                categoryId: e.categoryId,
+                isAllDay: e.isAllDay,
+                startTime: e.startTime,
+                endTime: e.endTime
+              });
             }
           });
 
-          // 2. 功課
+          // 2. 舊待辦事項連動
+          this.todos.filter(t => t.date === dateStr).forEach(t => {
+            if (this.isCategoryVisible('cat_todo')) {
+              items.push({
+                id: t.id,
+                source: 'todos',
+                title: t.text,
+                date: t.date,
+                categoryId: 'cat_todo',
+                isAllDay: true
+              });
+            }
+          });
+
+          // 3. 功課連動
           this.homeworks.filter(h => (h.date || this.getLocalToday()) === dateStr).forEach(h => {
             if (this.isCategoryVisible('cat_hw')) {
-              items.push({ id: h.id, source: 'homeworks', title: `[${h.class}] ${h.title}`, date: h.date || dateStr, categoryId: 'cat_hw', isAllDay: true });
+              items.push({
+                id: h.id,
+                source: 'homeworks',
+                title: `[${h.class}] ${h.title}`,
+                date: h.date || dateStr,
+                categoryId: 'cat_hw',
+                isAllDay: true
+              });
             }
           });
 
-          // 3. 測驗
+          // 4. 測驗連動
           this.quizzes.filter(q => (q.date || this.getLocalToday()) === dateStr).forEach(q => {
             if (this.isCategoryVisible('cat_quiz')) {
-              items.push({ id: q.id, source: 'quizzes', title: `[${q.class}] ${q.title}`, date: q.date || dateStr, categoryId: 'cat_quiz', isAllDay: true });
+              items.push({
+                id: q.id,
+                source: 'quizzes',
+                title: `[${q.class}] ${q.title}`,
+                date: q.date || dateStr,
+                categoryId: 'cat_quiz',
+                isAllDay: true
+              });
             }
           });
 
-          // 4. 事件紀錄
+          // 5. 事件紀錄連動
           this.incidents.filter(i => i.date === dateStr).forEach(i => {
             if (this.isCategoryVisible('cat_incident')) {
-              items.push({ id: i.id, source: 'incidents', title: `${this.getStudentName(i.studentId)}: ${i.category}`, date: i.date, categoryId: 'cat_incident', isAllDay: true });
+              items.push({
+                id: i.id,
+                source: 'incidents',
+                title: `${this.getStudentName(i.studentId)}: ${i.category}`,
+                date: i.date,
+                categoryId: 'cat_incident',
+                isAllDay: true
+              });
             }
           });
 
-          // 5. 假期
+          // 6. 香港假期
           if (this.isCategoryVisible('cat_holiday') && this.hkHolidays[dateStr]) {
-            items.push({ id: 'hol_' + dateStr, source: 'holiday', title: `🎉 ${this.hkHolidays[dateStr]}`, date: dateStr, categoryId: 'cat_holiday', isAllDay: true, isReadOnly: true });
+            items.push({
+              id: 'hol_' + dateStr,
+              source: 'holiday',
+              title: `🎉 ${this.hkHolidays[dateStr]}`,
+              date: dateStr,
+              categoryId: 'cat_holiday',
+              isAllDay: true,
+              isReadOnly: true
+            });
           }
 
           return items;
@@ -1365,7 +1811,7 @@ const firebaseConfig = {
           if (!this.activeEvent.title.trim()) return alert('請輸入內容標題');
           if (!this.activeEvent.date) return alert('請選擇日期');
 
-          // 解決問題 2：若分類為「功課」或「測驗」，自動同步新增到功課/測驗管理區塊
+          // 解決問題 2：日曆同步新增至功課或測驗
           if (this.activeEvent.categoryId === 'cat_hw') {
             const exists = this.homeworks.some(h => h.id === this.activeEvent.id);
             if (!exists) {
@@ -1376,6 +1822,9 @@ const firebaseConfig = {
                 date: this.activeEvent.date
               });
               this.autoSelectFirstHomework();
+            } else {
+              const hw = this.homeworks.find(h => h.id === this.activeEvent.id);
+              if (hw) { hw.title = this.activeEvent.title; hw.date = this.activeEvent.date; }
             }
           } else if (this.activeEvent.categoryId === 'cat_quiz') {
             const exists = this.quizzes.some(q => q.id === this.activeEvent.id);
@@ -1388,6 +1837,9 @@ const firebaseConfig = {
                 date: this.activeEvent.date
               });
               this.autoSelectFirstQuiz();
+            } else {
+              const q = this.quizzes.find(q => q.id === this.activeEvent.id);
+              if (q) { q.title = this.activeEvent.title; q.date = this.activeEvent.date; }
             }
           }
 
@@ -1396,6 +1848,9 @@ const firebaseConfig = {
             if (src === 'calendarEvents') {
               const idx = this.calendarEvents.findIndex(e => e.id === this.activeEvent.id);
               if (idx !== -1) this.calendarEvents[idx] = { ...this.activeEvent };
+            } else if (src === 'todos') {
+              const t = this.todos.find(item => item.id === this.activeEvent.id);
+              if (t) { t.text = this.activeEvent.title; t.date = this.activeEvent.date; }
             } else if (src === 'homeworks') {
               const hw = this.homeworks.find(item => item.id === this.activeEvent.id);
               if (hw) { hw.title = this.activeEvent.title; hw.date = this.activeEvent.date; }
@@ -1418,6 +1873,8 @@ const firebaseConfig = {
 
           if (src === 'calendarEvents') {
             this.calendarEvents = this.calendarEvents.filter(e => e.id !== id);
+          } else if (src === 'todos') {
+            this.todos = this.todos.filter(t => t.id !== id);
           } else if (src === 'homeworks') {
             this.homeworks = this.homeworks.filter(h => h.id !== id);
           } else if (src === 'quizzes') {
@@ -1428,7 +1885,7 @@ const firebaseConfig = {
           this.saveDataToFirebase();
         },
 
-        // 解決問題 5：功課與測驗順序上下搬移功能
+        // 解決問題 5：功課與測驗順序上下調整函數
         moveHomeworkUp(idx) {
           if (idx <= 0) return;
           const list = this.currentHomeworks;
@@ -1492,7 +1949,12 @@ const firebaseConfig = {
         addNewCategory() {
           const newId = 'cat_' + Date.now();
           const randomColor = this.colorPalette[Math.floor(Math.random() * this.colorPalette.length)];
-          this.calendarCategories.push({ id: newId, name: '新自訂分類', color: randomColor, visible: true });
+          this.calendarCategories.push({
+            id: newId,
+            name: '新自訂分類',
+            color: randomColor,
+            visible: true
+          });
           this.saveDataToFirebase();
         },
 
@@ -1526,13 +1988,16 @@ const firebaseConfig = {
               if (data.seatingGridCols) this.seatingGridCols = data.seatingGridCols;
               if (data.currentSemesterName) this.currentSemesterName = data.currentSemesterName;
               if (data.archives) this.archives = data.archives;
+              if (data.todos) this.todos = data.todos;
 
               this.autoSelectFirstHomework();
               this.autoSelectFirstQuiz();
             } else {
               this.resetState();
             }
-          } catch (e) { console.error("載入失敗", e); }
+          } catch (e) {
+            console.error("載入失敗", e);
+          }
         },
 
         async saveDataToFirebase() {
@@ -1555,9 +2020,12 @@ const firebaseConfig = {
               seatingGridRows: this.seatingGridRows,
               seatingGridCols: this.seatingGridCols,
               currentSemesterName: this.currentSemesterName,
-              archives: this.archives
+              archives: this.archives,
+              todos: this.todos
             }, { merge: true });
-          } catch (e) { console.error("同步失敗", e); }
+          } catch (e) {
+            console.error("同步失敗", e);
+          }
         },
 
         editSemesterName() {
@@ -1568,10 +2036,72 @@ const firebaseConfig = {
           }
         },
 
+        addQuickTodo() {
+          if (!this.quickTodoText.trim()) return;
+          this.todos.push({
+            id: 'todo_' + Date.now(),
+            text: this.quickTodoText.trim(),
+            date: this.quickTodoDate || this.getLocalToday(),
+            completed: false
+          });
+          this.quickTodoText = '';
+          this.saveDataToFirebase();
+        },
+
+        getSortedTodos() {
+          if (this.todoSortMode === 'date') {
+            return [...this.todos].sort((a, b) => new Date(a.date) - new Date(b.date));
+          }
+          return this.todos;
+        },
+
+        updateTodoDate(todoId, newDate) {
+          if (!newDate) return;
+          const t = this.todos.find(item => item.id === todoId);
+          if (t) {
+            t.date = newDate;
+            this.saveDataToFirebase();
+          }
+        },
+
+        toggleTodo(id) {
+          const t = this.todos.find(item => item.id === id);
+          if (t) {
+            t.completed = !t.completed;
+            this.saveDataToFirebase();
+          }
+        },
+
+        deleteTodo(id) {
+          this.todos = this.todos.filter(item => item.id !== id);
+          this.saveDataToFirebase();
+        },
+
+        getTaskStatusClass(todo) {
+          if (todo.completed) return 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-slate-400 line-through';
+          const today = this.getLocalToday();
+          if (todo.date < today) {
+            return 'bg-red-50 dark:bg-red-950/40 border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 animate-pulse';
+          } else if (todo.date === today) {
+            return 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-300';
+          } else {
+            return 'bg-slate-50 dark:bg-slate-700/40 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200';
+          }
+        },
+
+        getTaskBadge(todo) {
+          if (todo.completed) return { text: '✅ 已完成', class: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200 font-bold' };
+          const today = this.getLocalToday();
+          if (todo.date < today) return { text: '🚨 已逾期', class: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 font-bold' };
+          if (todo.date === today) return { text: '⏰ 今天截止', class: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 font-bold' };
+          return { text: '📌 進行中', class: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 font-bold' };
+        },
+
         archiveCurrentSemesterPrompt() {
           const name = prompt('請輸入要歸檔封存的學期名稱：', this.currentSemesterName);
           if (!name) return;
-          this.archives.push({
+
+          const archiveRecord = {
             id: 'arch_' + Date.now(),
             semesterName: name,
             archivedAt: new Date().toLocaleDateString(),
@@ -1580,10 +2110,44 @@ const firebaseConfig = {
             quizzes: JSON.parse(JSON.stringify(this.quizzes)),
             records: JSON.parse(JSON.stringify(this.records)),
             quizScores: JSON.parse(JSON.stringify(this.quizScores)),
-            incidents: JSON.parse(JSON.stringify(this.incidents))
-          });
+            incidents: JSON.parse(JSON.stringify(this.incidents)),
+            seatingAssignments: JSON.parse(JSON.stringify(this.seatingAssignments))
+          };
+
+          this.archives.push(archiveRecord);
+
+          if (confirm(`「${name}」已順利歸檔！\n是否要清空當前學期的功課、測驗與事件紀錄，開啟全新學期？\n(註：學生名單與座位排位將會自動保留)`)) {
+            this.homeworks = [];
+            this.quizzes = [];
+            this.records = {};
+            this.quizScores = {};
+            this.incidents = [];
+            this.calendarEvents = [];
+            const nextSem = prompt('請輸入新學期的名稱：', '2026-2027 第二學期');
+            if (nextSem) this.currentSemesterName = nextSem;
+          }
+
           this.saveDataToFirebase();
           alert('學期歸檔完成！');
+        },
+
+        restoreFromArchive(archId) {
+          const arch = this.archives.find(a => a.id === archId);
+          if (!arch) return;
+          if (confirm(`確定要載入歷史歸檔學期「${arch.semesterName}」的紀錄嗎？`)) {
+            this.students = JSON.parse(JSON.stringify(arch.students));
+            this.homeworks = JSON.parse(JSON.stringify(arch.homeworks));
+            this.quizzes = JSON.parse(JSON.stringify(arch.quizzes));
+            this.records = JSON.parse(JSON.stringify(arch.records));
+            this.quizScores = JSON.parse(JSON.stringify(arch.quizScores));
+            this.incidents = JSON.parse(JSON.stringify(arch.incidents));
+            if (arch.seatingAssignments) this.seatingAssignments = JSON.parse(JSON.stringify(arch.seatingAssignments));
+            
+            this.viewingArchiveId = arch.id;
+            this.autoSelectFirstHomework();
+            this.autoSelectFirstQuiz();
+            this.showQuizChart = false;
+          }
         },
 
         exitArchiveView() {
@@ -1592,12 +2156,106 @@ const firebaseConfig = {
           alert('已回到當前學期！');
         },
 
+        deleteArchive(archId) {
+          if (confirm('確定要永久刪除此學期歸檔紀錄嗎？')) {
+            this.archives = this.archives.filter(a => a.id !== archId);
+            this.saveDataToFirebase();
+          }
+        },
+
         openStudentProfile(studentId) {
           const s = this.students.find(st => st.id === studentId);
           if (s) {
             this.profileStudent = s;
             this.showStudentProfileModal = true;
+            this.$nextTick(() => {
+              setTimeout(() => this.renderStudentTrendChart(studentId), 150);
+            });
           }
+        },
+
+        getStudentQuizStats(studentId) {
+          const quizList = this.currentQuizzes;
+          const pcts = [];
+          quizList.forEach(q => {
+            const score = this.getQuizScore(q.id, studentId);
+            if (score !== '' && score !== undefined && score !== null) {
+              pcts.push({
+                title: q.title,
+                pct: Math.round((Number(score) / q.maxScore) * 100)
+              });
+            }
+          });
+
+          if (pcts.length === 0) {
+            return { avg: 0, max: 0, min: 0, lastVsPrev: '-', statusText: '無測驗數據', count: 0 };
+          }
+
+          const scoresOnly = pcts.map(p => p.pct);
+          const avg = Math.round(scoresOnly.reduce((a, b) => a + b, 0) / scoresOnly.length);
+          const max = Math.max(...scoresOnly);
+          const min = Math.min(...scoresOnly);
+          
+          let lastVsPrev = '-';
+          let statusText = '僅1次測驗';
+          if (pcts.length >= 2) {
+            const latest = pcts[pcts.length - 1].pct;
+            const prev = pcts[pcts.length - 2].pct;
+            const diff = latest - prev;
+            lastVsPrev = (diff >= 0 ? '+' : '') + diff + '%';
+            statusText = diff >= 0 ? '較上次進步' : '較上次退步';
+          }
+
+          return { avg, max, min, lastVsPrev, statusText, count: pcts.length };
+        },
+
+        renderStudentTrendChart(studentId) {
+          const canvas = document.getElementById('studentTrendChartCanvas');
+          if (!canvas) return;
+
+          const quizList = this.currentQuizzes;
+          const labels = [];
+          const scores = [];
+
+          quizList.forEach(q => {
+            const score = this.getQuizScore(q.id, studentId);
+            if (score !== '' && score !== undefined && score !== null) {
+              labels.push(q.title);
+              scores.push(Math.round((Number(score) / q.maxScore) * 100));
+            }
+          });
+
+          if (this.studentChartInstance) {
+            this.studentChartInstance.destroy();
+            this.studentChartInstance = null;
+          }
+
+          const ctx = canvas.getContext('2d');
+          this.studentChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: labels.length > 0 ? labels : ['無測驗紀錄'],
+              datasets: [{
+                label: '得分率 (%)',
+                data: scores.length > 0 ? scores : [0],
+                borderColor: '#4f46e5',
+                backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.3,
+                pointRadius: 5,
+                pointBackgroundColor: '#4f46e5'
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+                y: { min: 0, max: 100, ticks: { callback: v => v + '%' } }
+              }
+            }
+          });
         },
 
         generateQuizChart() {
@@ -1611,26 +2269,53 @@ const firebaseConfig = {
               if (!canvas) return;
 
               const pass = Number(this.quizConfig.passPct) || 50;
-              const scores = this.currentStudents.map(s => this.getQuizScore(q.id, s.id)).filter(v => v !== '' && v !== undefined);
+              const l2 = Number(this.quizConfig.lvl2) || 70;
+              const l3 = Number(this.quizConfig.lvl3) || 80;
+              const l4 = Number(this.quizConfig.lvl4) || 90;
+
+              const scores = this.currentStudents
+                .map(s => this.getQuizScore(q.id, s.id))
+                .filter(v => v !== '' && v !== undefined && v !== null);
+
               const counts = [0, 0, 0, 0, 0];
               scores.forEach(s => {
                 const pct = (Number(s) / q.maxScore) * 100;
-                if (pct >= 90) counts[4]++;
-                else if (pct >= 80) counts[3]++;
-                else if (pct >= 70) counts[2]++;
+                if (pct >= l4) counts[4]++;
+                else if (pct >= l3) counts[3]++;
+                else if (pct >= l2) counts[2]++;
                 else if (pct >= pass) counts[1]++;
                 else counts[0]++;
               });
 
-              if (this.chartInstance) this.chartInstance.destroy();
+              if (this.chartInstance) {
+                this.chartInstance.destroy();
+                this.chartInstance = null;
+              }
+
               const ctx = canvas.getContext('2d');
               this.chartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                  labels: [`不及格 (<${pass}%)`, `及格 (${pass}-69%)`, `中等 (70-79%)`, `良好 (80-89%)`, `優秀 (≥90%)`],
-                  datasets: [{ label: '人數', data: counts, backgroundColor: ['#ef4444', '#f59e0b', '#6366f1', '#3b82f6', '#10b981'], borderRadius: 8 }]
+                  labels: [
+                    `不及格 (<${pass}%)`,
+                    `及格 (${pass}-${l2 - 1}%)`,
+                    `中等 (${l2}-${l3 - 1}%)`,
+                    `良好 (${l3}-${l4 - 1}%)`,
+                    `優秀 (≥${l4}%)`
+                  ],
+                  datasets: [{
+                    label: '人數',
+                    data: counts,
+                    backgroundColor: ['#ef4444', '#f59e0b', '#6366f1', '#3b82f6', '#10b981'],
+                    borderRadius: 8
+                  }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: { legend: { display: false } },
+                  scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+                }
               });
             }, 100);
           });
@@ -1638,8 +2323,13 @@ const firebaseConfig = {
 
         toggleDarkMode() {
           this.isDarkMode = !this.isDarkMode;
-          document.documentElement.classList.toggle('dark', this.isDarkMode);
-          localStorage.setItem('theme', this.isDarkMode ? 'dark' : 'light');
+          if (this.isDarkMode) {
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('theme', 'dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+            localStorage.setItem('theme', 'light');
+          }
         },
 
         setThemeColor(key) {
@@ -1658,8 +2348,114 @@ const firebaseConfig = {
           return option ? option.btnBg : 'bg-indigo-600 text-white shadow-md';
         },
 
+        getStudentHomeworkRate(studentId) {
+          const classHws = this.currentHomeworks;
+          if (classHws.length === 0) return 0;
+          const done = classHws.filter(hw => this.getStatus(studentId, hw.id) === 'completed').length;
+          return Math.round((done / classHws.length) * 100);
+        },
+
+        getStudentIncidents(studentId) {
+          return this.incidents.filter(i => i.studentId === studentId);
+        },
+
         smartRandomizeSeats() {
-          alert('✨ 已執行智慧隨機排位！');
+          const students = this.currentStudents;
+          const R = this.seatingGridRows;
+          const C = this.seatingGridCols;
+          if (students.length > R * C) {
+            alert(`全班人數 (${students.length}) 超過座位容量 (${R * C})，請先增加行或列數！`);
+            return;
+          }
+
+          const currentClassAssignments = (this.seatingAssignments && this.seatingAssignments[this.currentClass]) || {};
+          const pinnedSlotsKeys = new Set();
+          const fixedAssignment = {};
+
+          students.forEach(st => {
+            const pos = currentClassAssignments[st.id];
+            if (pos && pos.pinned && pos.r <= R && pos.c <= C) {
+              pinnedSlotsKeys.add(`${pos.r}_${pos.c}`);
+              fixedAssignment[st.id] = { r: pos.r, c: pos.c, pinned: true };
+            }
+          });
+
+          const unpinnedStudents = students.filter(st => !fixedAssignment[st.id]);
+          let remainingSlots = [];
+          for (let r = 1; r <= R; r++) {
+            for (let c = 1; c <= C; c++) {
+              if (!pinnedSlotsKeys.has(`${r}_${c}`)) {
+                remainingSlots.push({ r, c });
+              }
+            }
+          }
+
+          let bestAssignment = null;
+          let foundValid = false;
+
+          for (let attempt = 0; attempt < 2000; attempt++) {
+            let shuffledSlots = [...remainingSlots].sort(() => Math.random() - 0.5);
+            let currentAssignment = { ...fixedAssignment };
+            let gridMatrix = {};
+            
+            Object.keys(fixedAssignment).forEach(sId => {
+              const p = fixedAssignment[sId];
+              gridMatrix[`${p.r}_${p.c}`] = sId;
+            });
+
+            let valid = true;
+
+            for (let i = 0; i < unpinnedStudents.length; i++) {
+              const st = unpinnedStudents[i];
+              const slot = shuffledSlots[i];
+
+              if (st.isTall && slot.r <= 2) { valid = false; break; }
+              if (st.frontRow && slot.r > 2) { valid = false; break; }
+              if (st.backRow && slot.r < (R - 1)) { valid = false; break; }
+
+              currentAssignment[st.id] = { r: slot.r, c: slot.c, pinned: false };
+              gridMatrix[`${slot.r}_${slot.c}`] = st.id;
+            }
+
+            if (!valid) continue;
+
+            for (let st of students) {
+              const pos = currentAssignment[st.id];
+              if (!pos) continue;
+
+              const avoidList = st.avoidIds || [];
+              if (avoidList.length === 0) continue;
+
+              const neighbors = [
+                `${pos.r - 1}_${pos.c}`, `${pos.r + 1}_${pos.c}`,
+                `${pos.r}_${pos.c - 1}`, `${pos.r}_${pos.c + 1}`
+              ];
+
+              for (let nKey of neighbors) {
+                const neighborId = gridMatrix[nKey];
+                if (neighborId && avoidList.includes(neighborId)) {
+                  valid = false;
+                  break;
+                }
+              }
+              if (!valid) break;
+            }
+
+            if (valid) {
+              bestAssignment = currentAssignment;
+              foundValid = true;
+              break;
+            }
+          }
+
+          if (foundValid) {
+            if (!this.seatingAssignments) this.seatingAssignments = {};
+            this.seatingAssignments[this.currentClass] = bestAssignment;
+            this.saveDataToFirebase();
+            alert('✨ 智慧排位成功！已保留釘選固定座位並完全滿足其餘限制條件。');
+          } else {
+            alert('⚠️ 嘗試 2000 次後未能完全滿足所有嚴格限制（可能與釘選位置產生矛盾），建議適當取消部分釘選或放寬條件！');
+          }
         },
 
         getSeatStudent(r, c) {
@@ -1671,14 +2467,216 @@ const firebaseConfig = {
           return this.students.find(s => s.id === studentId);
         },
 
+        togglePinSeat(r, c) {
+          const st = this.getSeatStudent(r, c);
+          if (!st) return;
+          if (!this.seatingAssignments) this.seatingAssignments = {};
+          if (!this.seatingAssignments[this.currentClass]) this.seatingAssignments[this.currentClass] = {};
+          
+          const pos = this.seatingAssignments[this.currentClass][st.id] || { r, c };
+          const currentPinned = !!pos.pinned;
+          this.seatingAssignments[this.currentClass][st.id] = {
+            r: pos.r || r,
+            c: pos.c || c,
+            pinned: !currentPinned
+          };
+          this.saveDataToFirebase();
+        },
+
+        isSeatPinned(r, c) {
+          const st = this.getSeatStudent(r, c);
+          if (!st) return false;
+          const pos = (this.seatingAssignments && this.seatingAssignments[this.currentClass] && this.seatingAssignments[this.currentClass][st.id]);
+          return pos ? !!pos.pinned : false;
+        },
+
+        handleSeatDragStart(event, r, c) {
+          const student = this.getSeatStudent(r, c);
+          if (!student) return;
+          this.draggedSeat = { r, c, studentId: student.id };
+          event.dataTransfer.effectAllowed = 'move';
+        },
+
+        handleSeatDrop(event, targetR, targetC) {
+          event.preventDefault();
+          if (!this.draggedSeat) return;
+
+          const sourceR = this.draggedSeat.r;
+          const sourceC = this.draggedSeat.c;
+          const sourceStudentId = this.draggedSeat.studentId;
+
+          if (sourceR === targetR && sourceC === targetC) {
+            this.draggedSeat = null;
+            return;
+          }
+
+          if (!this.seatingAssignments) this.seatingAssignments = {};
+          if (!this.seatingAssignments[this.currentClass]) this.seatingAssignments[this.currentClass] = {};
+
+          const targetStudent = this.getSeatStudent(targetR, targetC);
+          const sourcePos = this.seatingAssignments[this.currentClass][sourceStudentId] || {};
+          const sourcePinned = !!sourcePos.pinned;
+
+          if (targetStudent) {
+            const targetPos = this.seatingAssignments[this.currentClass][targetStudent.id] || {};
+            const targetPinned = !!targetPos.pinned;
+
+            this.seatingAssignments[this.currentClass][sourceStudentId] = { r: targetR, c: targetC, pinned: sourcePinned };
+            this.seatingAssignments[this.currentClass][targetStudent.id] = { r: sourceR, c: sourceC, pinned: targetPinned };
+          } else {
+            this.seatingAssignments[this.currentClass][sourceStudentId] = { r: targetR, c: targetC, pinned: sourcePinned };
+          }
+
+          this.draggedSeat = null;
+          this.saveDataToFirebase();
+        },
+
+        toggleAvoidStudent(student, targetId) {
+          if (!student.avoidIds) student.avoidIds = [];
+          if (student.avoidIds.includes(targetId)) {
+            student.avoidIds = student.avoidIds.filter(id => id !== targetId);
+          } else {
+            student.avoidIds.push(targetId);
+          }
+        },
+
+        exportSeatingToExcel() {
+          const R = this.seatingGridRows;
+          const C = this.seatingGridCols;
+          let rows = [];
+
+          for (let r = 1; r <= R; r++) {
+            let rowData = {};
+            for (let c = 1; c <= C; c++) {
+              const st = this.getSeatStudent(r, c);
+              rowData[`第 ${c} 列`] = st ? `${st.no ? st.no + ' ' : ''}${st.name}` : '(空位)';
+            }
+            rows.push(rowData);
+          }
+
+          const wb = XLSX.utils.book_new();
+          const ws = XLSX.utils.json_to_sheet(rows);
+          XLSX.utils.book_append_sheet(wb, ws, `${this.currentClass} 座位表`);
+          XLSX.writeFile(wb, `${this.currentClass}_課室座位表.xlsx`);
+        },
+
+        exportSeatingToWord() {
+          const R = this.seatingGridRows;
+          const C = this.seatingGridCols;
+          
+          let tableRowsHtml = '';
+          for (let r = 1; r <= R; r++) {
+            tableRowsHtml += '<tr>';
+            for (let c = 1; c <= C; c++) {
+              const st = this.getSeatStudent(r, c);
+              const studentText = st ? `<b>#${st.no || '-'}</b><br><span style="font-size: 14pt;">${st.name}</span>` : '<span style="color:#aaa;">空位</span>';
+              tableRowsHtml += `<td style="border:1px solid #999; text-align:center; vertical-align:middle; height:60px; padding:8px;">${studentText}</td>`;
+            }
+            tableRowsHtml += '</tr>';
+          }
+
+          const wordHtml = `
+            <html xmlns:o='urn:schemas-microsoft-microsoft-com:office:office' 
+                  xmlns:w='urn:schemas-microsoft-microsoft-com:office:word' 
+                  xmlns='http://www.w3.org/TR/REC-html40'>
+            <head>
+              <meta charset='utf-8'>
+              <title>${this.currentClass} 課室座位表</title>
+              <style>
+                body { font-family: 'Microsoft JhengHei', Arial, sans-serif; }
+                h2 { text-align: center; color: #1e293b; margin-bottom: 20px; }
+                .board { background-color: #1e293b; color: #ffffff; text-align: center; padding: 10px; font-weight: bold; border-radius: 6px; margin-bottom: 15px; }
+                table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+              </style>
+            </head>
+            <body>
+              <h2>🪑 ${this.currentClass} 班課室座位表</h2>
+              <div class="board">🖥️ 講台 / 黑板方向 (前排)</div>
+              <table>
+                ${tableRowsHtml}
+              </table>
+            </body>
+            </html>
+          `;
+
+          const blob = new Blob(['\ufeff' + wordHtml], { type: 'application/msword' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${this.currentClass}_課室座位表.doc`;
+          a.click();
+          URL.revokeObjectURL(url);
+        },
+
         getLeftColumnStudents() {
           const all = this.getSortedStudents();
-          return all.slice(0, Math.ceil(all.length / 2));
+          const half = Math.ceil(all.length / 2);
+          return all.slice(0, half);
         },
 
         getRightColumnStudents() {
           const all = this.getSortedStudents();
-          return all.slice(Math.ceil(all.length / 2));
+          const half = Math.ceil(all.length / 2);
+          return all.slice(half);
+        },
+
+        addClass() {
+          if (this.newClassName && !this.classes.includes(this.newClassName)) {
+            this.classes.push(this.newClassName);
+            this.currentClass = this.newClassName;
+            this.newClassName = '';
+            this.autoSelectFirstHomework();
+            this.autoSelectFirstQuiz();
+            this.saveDataToFirebase();
+          }
+        },
+
+        removeClass(cls) {
+          if (this.classes.length <= 1) return alert('至少需保留一個班別');
+          this.classes = this.classes.filter(c => c !== cls);
+          if (this.currentClass === cls) this.currentClass = this.classes[0];
+          this.autoSelectFirstHomework();
+          this.autoSelectFirstQuiz();
+          this.saveDataToFirebase();
+        },
+
+        addCategory() {
+          if (this.newCategoryName && !this.presetCategories.includes(this.newCategoryName)) {
+            this.presetCategories.push(this.newCategoryName);
+            this.newCategoryName = '';
+            this.saveDataToFirebase();
+          }
+        },
+
+        removeCategory(idx) {
+          this.presetCategories.splice(idx, 1);
+          this.saveDataToFirebase();
+        },
+
+        calcBatchCount() {
+          return this.batchInputText.split('\n').filter(l => l.trim()).length;
+        },
+
+        processBatchStudents() {
+          if (!this.batchInputText.trim()) return;
+          const lines = this.batchInputText.split('\n');
+          lines.forEach((line, idx) => {
+            const trimmed = line.trim();
+            if (!trimmed) return;
+            const parts = trimmed.split(/\s+/);
+            let no = '';
+            let name = trimmed;
+            if (parts.length > 1 && !isNaN(parts[0])) {
+              no = parts[0];
+              name = parts.slice(1).join(' ');
+            } else {
+              no = (idx + 1).toString().padStart(2, '0');
+            }
+            this.students.push({ id: 's_' + Date.now() + Math.random().toString(36).substr(2, 4), class: this.currentClass, no, name, isTall: false, frontRow: false, backRow: false, avoidIds: [] });
+          });
+          this.batchInputText = '';
+          this.saveDataToFirebase();
+          alert('學生名單已成功導入！');
         },
 
         get currentStudents() {
@@ -1691,14 +2689,22 @@ const firebaseConfig = {
 
         addNewStudentInput() {
           const nextNo = (this.currentStudents.length + 1).toString().padStart(2, '0');
-          this.students.push({ id: 's_' + Date.now(), class: this.currentClass, no: nextNo, name: '' });
+          this.students.push({ id: 's_' + Date.now(), class: this.currentClass, no: nextNo, name: '', isTall: false, frontRow: false, backRow: false, avoidIds: [] });
         },
 
         removeStudent(id) {
-          if (confirm('確定要刪除這名學生嗎？')) {
+          if (confirm('確定要刪除這位學生嗎？')) {
             this.students = this.students.filter(s => s.id !== id);
             this.saveDataToFirebase();
           }
+        },
+
+        autoResequenceStudentNos() {
+          const sorted = this.getSortedStudents();
+          sorted.forEach((s, idx) => {
+            s.no = (idx + 1).toString().padStart(2, '0');
+          });
+          this.saveDataToFirebase();
         },
 
         get currentHomeworks() {
@@ -1710,7 +2716,11 @@ const firebaseConfig = {
         },
 
         autoSelectFirstHomework() {
-          this.selectedHomeworkId = this.currentHomeworks.length > 0 ? this.currentHomeworks[0].id : null;
+          if (this.currentHomeworks.length > 0) {
+            this.selectedHomeworkId = this.currentHomeworks[0].id;
+          } else {
+            this.selectedHomeworkId = null;
+          }
         },
 
         addHomeworkPrompt() {
@@ -1727,7 +2737,10 @@ const firebaseConfig = {
           const hw = this.getSelectedHomework();
           if (!hw) return;
           const newTitle = prompt('請輸入新的功課名稱：', hw.title);
-          if (newTitle) { hw.title = newTitle; this.saveDataToFirebase(); }
+          if (newTitle) {
+            hw.title = newTitle;
+            this.saveDataToFirebase();
+          }
         },
 
         deleteCurrentHomework() {
@@ -1741,24 +2754,30 @@ const firebaseConfig = {
         },
 
         getStatus(studentId, hwId) {
-          return this.records[`${studentId}_${hwId}`] || 'missing';
+          const key = `${studentId}_${hwId}`;
+          return this.records[key] || 'missing';
         },
 
         setStatus(studentId, hwId, status) {
-          this.records[`${studentId}_${hwId}`] = status;
+          const key = `${studentId}_${hwId}`;
+          this.records[key] = status;
           this.saveDataToFirebase();
         },
 
         setAllStatus(status) {
           const hw = this.getSelectedHomework();
           if (!hw) return;
-          this.currentStudents.forEach(s => { this.records[`${s.id}_${hw.id}`] = status; });
+          this.currentStudents.forEach(s => {
+            const key = `${s.id}_${hw.id}`;
+            this.records[key] = status;
+          });
           this.saveDataToFirebase();
         },
 
         getHomeworkStats() {
           const hw = this.getSelectedHomework();
           if (!hw) return { completed: 0, missing: 0, correction: 0, pending: 0, absent: 0 };
+          
           let completed = 0, missing = 0, correction = 0, pending = 0, absent = 0;
           this.currentStudents.forEach(s => {
             const st = this.getStatus(s.id, hw.id);
@@ -1774,10 +2793,15 @@ const firebaseConfig = {
         copyMissingNames() {
           const hw = this.getSelectedHomework();
           if (!hw) return;
-          const missing = this.getSortedStudents().filter(s => this.getStatus(s.id, hw.id) === 'missing');
-          if (missing.length === 0) return alert('全班已交齊！');
-          const names = missing.map(s => `${s.no ? s.no + ' ' : ''}${s.name}`).join('\n');
-          navigator.clipboard.writeText(names).then(() => alert(`已複製 ${missing.length} 位未交名單！`));
+          const missingStudents = this.getSortedStudents().filter(s => this.getStatus(s.id, hw.id) === 'missing');
+          if (missingStudents.length === 0) {
+            alert('全班已交齊！沒有未交學生。');
+            return;
+          }
+          const names = missingStudents.map(s => `${s.no ? s.no + ' ' : ''}${s.name}`).join('\n');
+          navigator.clipboard.writeText(names).then(() => {
+            alert(`已成功複製未交學生名單到剪貼簿（共 ${missingStudents.length} 人）！`);
+          });
         },
 
         get currentQuizzes() {
@@ -1789,15 +2813,20 @@ const firebaseConfig = {
         },
 
         autoSelectFirstQuiz() {
-          this.selectedQuizId = this.currentQuizzes.length > 0 ? this.currentQuizzes[0].id : null;
+          if (this.currentQuizzes.length > 0) {
+            this.selectedQuizId = this.currentQuizzes[0].id;
+          } else {
+            this.selectedQuizId = null;
+          }
         },
 
         addQuizPrompt() {
-          const title = prompt('請輸入測驗名稱：');
+          const title = prompt('請輸入測驗名稱 (例如: 單元二小測)：');
           if (title) {
             const newQ = { id: 'q_' + Date.now(), class: this.currentClass, title, maxScore: 100, date: this.getLocalToday() };
             this.quizzes.push(newQ);
             this.selectedQuizId = newQ.id;
+            this.showQuizChart = false;
             this.saveDataToFirebase();
           }
         },
@@ -1806,20 +2835,27 @@ const firebaseConfig = {
           const q = this.getSelectedQuiz();
           if (!q) return;
           const newTitle = prompt('請輸入新的測驗名稱：', q.title);
-          if (newTitle) { q.title = newTitle; this.saveDataToFirebase(); }
+          if (newTitle) {
+            q.title = newTitle;
+            this.saveDataToFirebase();
+          }
         },
 
         updateQuizMaxScore(val) {
           const q = this.getSelectedQuiz();
-          if (q) { q.maxScore = Number(val) || 100; this.saveDataToFirebase(); }
+          if (!q) return;
+          q.maxScore = Number(val) || 100;
+          this.showQuizChart = false;
+          this.saveDataToFirebase();
         },
 
         deleteCurrentQuiz() {
           const q = this.getSelectedQuiz();
           if (!q) return;
-          if (confirm(`確定刪除「${q.title}」？`)) {
+          if (confirm(`確定要刪除測驗「${q.title}」嗎？`)) {
             this.quizzes = this.quizzes.filter(item => item.id !== q.id);
             this.autoSelectFirstQuiz();
+            this.showQuizChart = false;
             this.saveDataToFirebase();
           }
         },
@@ -1831,34 +2867,63 @@ const firebaseConfig = {
 
         setQuizScore(quizId, studentId, val) {
           const key = `${quizId}_${studentId}`;
-          if (val === '') delete this.quizScores[key];
-          else this.quizScores[key] = Number(val);
+          if (val === '') {
+            delete this.quizScores[key];
+          } else {
+            this.quizScores[key] = Number(val);
+          }
           this.saveDataToFirebase();
         },
 
         getQuizScorePct(quizId, studentId) {
           const score = this.getQuizScore(quizId, studentId);
           const q = this.getSelectedQuiz();
-          if (score === '' || !q) return '-';
+          if (score === '' || !q || !q.maxScore) return '-';
           return `${((score / q.maxScore) * 100).toFixed(0)}%`;
         },
 
         get quizStats() {
           const q = this.getSelectedQuiz();
           if (!q) return { avg: 0, avgPct: '0.0', passRate: 0, max: 0, min: 0, count: 0 };
+
           const scores = this.currentStudents.map(s => this.getQuizScore(q.id, s.id)).filter(v => v !== '' && v !== undefined);
           if (scores.length === 0) return { avg: 0, avgPct: '0.0', passRate: 0, max: 0, min: 0, count: 0 };
+
           const sum = scores.reduce((a, b) => a + b, 0);
           const avg = (sum / scores.length).toFixed(1);
-          const passCount = scores.filter(s => s >= (q.maxScore * this.quizConfig.passPct) / 100).length;
-          return { avg, avgPct: ((avg / q.maxScore) * 100).toFixed(1), passRate: Math.round((passCount / scores.length) * 100), max: Math.max(...scores), min: Math.min(...scores), count: scores.length };
+          const avgPct = ((avg / q.maxScore) * 100).toFixed(1);
+          const passScore = (q.maxScore * this.quizConfig.passPct) / 100;
+          const passCount = scores.filter(s => s >= passScore).length;
+
+          return {
+            avg,
+            avgPct,
+            passRate: Math.round((passCount / scores.length) * 100),
+            max: Math.max(...scores),
+            min: Math.min(...scores),
+            count: scores.length
+          };
         },
 
-        getCompletedHomeworks(studentId) { return this.currentHomeworks.filter(hw => this.getStatus(studentId, hw.id) === 'completed'); },
-        getMissingHomeworks(studentId) { return this.currentHomeworks.filter(hw => this.getStatus(studentId, hw.id) === 'missing'); },
-        getCorrectionHomeworks(studentId) { return this.currentHomeworks.filter(hw => this.getStatus(studentId, hw.id) === 'correction'); },
-        getPendingHomeworks(studentId) { return this.currentHomeworks.filter(hw => this.getStatus(studentId, hw.id) === 'pending'); },
-        getAbsentHomeworks(studentId) { return this.currentHomeworks.filter(hw => this.getStatus(studentId, hw.id) === 'absent'); },
+        getCompletedHomeworks(studentId) {
+          return this.currentHomeworks.filter(hw => this.getStatus(studentId, hw.id) === 'completed');
+        },
+
+        getMissingHomeworks(studentId) {
+          return this.currentHomeworks.filter(hw => this.getStatus(studentId, hw.id) === 'missing');
+        },
+
+        getCorrectionHomeworks(studentId) {
+          return this.currentHomeworks.filter(hw => this.getStatus(studentId, hw.id) === 'correction');
+        },
+
+        getPendingHomeworks(studentId) {
+          return this.currentHomeworks.filter(hw => this.getStatus(studentId, hw.id) === 'pending');
+        },
+
+        getAbsentHomeworks(studentId) {
+          return this.currentHomeworks.filter(hw => this.getStatus(studentId, hw.id) === 'absent');
+        },
 
         get currentIncidents() {
           const studentIds = this.currentStudents.map(s => s.id);
@@ -1884,37 +2949,98 @@ const firebaseConfig = {
         },
 
         exportJSON() {
-          const data = { classes: this.classes, calendarEvents: this.calendarEvents, students: this.students, homeworks: this.homeworks, quizzes: this.quizzes, records: this.records, quizScores: this.quizScores, incidents: this.incidents };
+          const data = {
+            classes: this.classes,
+            currentTheme: this.currentTheme,
+            presetCategories: this.presetCategories,
+            calendarCategories: this.calendarCategories,
+            calendarEvents: this.calendarEvents,
+            quizConfig: this.quizConfig,
+            students: this.students,
+            homeworks: this.homeworks,
+            quizzes: this.quizzes,
+            records: this.records,
+            quizScores: this.quizScores,
+            incidents: this.incidents,
+            seatingAssignments: this.seatingAssignments,
+            seatingGridRows: this.seatingGridRows,
+            seatingGridCols: this.seatingGridCols,
+            currentSemesterName: this.currentSemesterName,
+            archives: this.archives,
+            todos: this.todos
+          };
           const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-          const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `系統備份_${this.getLocalToday()}.json`; a.click();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `課堂管理系統備份_${this.getLocalToday()}.json`;
+          a.click();
         },
 
         importJSON(e) {
           const file = e.target.files[0];
           if (!file) return;
           const reader = new FileReader();
-          reader.onload = (evt) => {
+          reader.onload = (event) => {
             try {
-              const data = JSON.parse(evt.target.result);
-              if (confirm('確定導入備份檔嗎？')) {
-                Object.assign(this, data);
+              const data = JSON.parse(event.target.result);
+              if (confirm('匯入 JSON 將會覆蓋目前的數據，確定繼續嗎？')) {
+                if (data.classes) this.classes = data.classes;
+                if (data.currentTheme) this.currentTheme = data.currentTheme;
+                if (data.presetCategories) this.presetCategories = data.presetCategories;
+                if (data.calendarCategories) this.calendarCategories = data.calendarCategories;
+                if (data.calendarEvents) this.calendarEvents = data.calendarEvents;
+                if (data.quizConfig) this.quizConfig = data.quizConfig;
+                if (data.students) this.students = data.students;
+                if (data.homeworks) this.homeworks = data.homeworks;
+                if (data.quizzes) this.quizzes = data.quizzes;
+                if (data.records) this.records = data.records;
+                if (data.quizScores) this.quizScores = data.quizScores;
+                if (data.incidents) this.incidents = data.incidents;
+                if (data.seatingAssignments) this.seatingAssignments = data.seatingAssignments;
+                if (data.seatingGridRows) this.seatingGridRows = data.seatingGridRows;
+                if (data.seatingGridCols) this.seatingGridCols = data.seatingGridCols;
+                if (data.currentSemesterName) this.currentSemesterName = data.currentSemesterName;
+                if (data.archives) this.archives = data.archives;
+                if (data.todos) this.todos = data.todos;
+
                 this.saveDataToFirebase();
-                alert('已成功還原！');
+                alert('備份資料已成功還原！');
               }
-            } catch (err) { alert('JSON 檔案無效！'); }
+            } catch (err) {
+              alert('JSON 檔案格式錯誤，無法解析！');
+            }
           };
           reader.readAsText(file);
         },
 
         exportToExcel() {
           const wb = XLSX.utils.book_new();
+
           const hwData = this.currentStudents.map(s => {
             const row = { '學號': s.no || '', '姓名': s.name };
-            this.currentHomeworks.forEach(hw => { row[`功課: ${hw.title}`] = this.getStatus(s.id, hw.id); });
+            this.currentHomeworks.forEach(hw => {
+              const st = this.getStatus(s.id, hw.id);
+              row[`功課: ${hw.title}`] = st === 'completed' ? '已完成' : st === 'missing' ? '未交' : st === 'correction' ? '待改正' : st === 'pending' ? '待補交' : '缺席';
+            });
+            this.currentQuizzes.forEach(q => {
+              row[`測驗: ${q.title}`] = this.getQuizScore(q.id, s.id);
+            });
             return row;
           });
-          XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(hwData), "成績報表");
-          XLSX.writeFile(wb, `報表_${this.currentClass}.xlsx`);
+          const ws1 = XLSX.utils.json_to_sheet(hwData);
+          XLSX.utils.book_append_sheet(wb, ws1, "功課與測驗總表");
+
+          const incData = this.currentIncidents.map(i => ({
+            '日期': i.date,
+            '學生': this.getStudentName(i.studentId),
+            '事件項目': i.category,
+            '備註': i.note
+          }));
+          const ws2 = XLSX.utils.json_to_sheet(incData);
+          XLSX.utils.book_append_sheet(wb, ws2, "課堂事件紀錄");
+
+          XLSX.writeFile(wb, `課堂管理系統報表_${this.currentClass}.xlsx`);
         }
       }
     }
