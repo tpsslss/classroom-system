@@ -13,6 +13,14 @@
     html {
       scrollbar-gutter: stable;
     }
+    /* 隱藏滾動條但保持滾動能力 */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
   </style>
 
   <!-- Tailwind CSS -->
@@ -129,10 +137,10 @@
       <!-- ==================== 1. 主頁：Google Calendar 風格行事曆 ==================== -->
       <div x-show="currentTab === 'calendar'" class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 space-y-4">
         
-        <!-- Google Calendar 工具列 Header -->
+        <!-- Google Calendar Header 工具列 -->
         <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-700">
           <div class="flex items-center space-x-3">
-            <button @click="goToday()" class="px-3.5 py-1.5 border border-slate-300 dark:border-slate-600 rounded-xl text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-700 transition">今天 Today</button>
+            <button @click="goToday()" class="px-3.5 py-1.5 border border-slate-300 dark:border-slate-600 rounded-xl text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-700 transition" title="一鍵跳回今天的月份與日期">今天 Today</button>
             <div class="flex items-center space-x-1">
               <button @click="prevMonth()" class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-bold">◀</button>
               <button @click="nextMonth()" class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-bold">▶</button>
@@ -143,65 +151,67 @@
           <div class="flex items-center space-x-2">
             <!-- 視角切換：網格 vs 列表 -->
             <div class="bg-slate-100 dark:bg-slate-700 p-1 rounded-xl flex text-xs font-bold">
-              <button @click="calViewMode = 'grid'" :class="calViewMode === 'grid' ? 'bg-white dark:bg-slate-800 shadow text-indigo-600 dark:text-indigo-400' : 'text-slate-500'" class="px-3 py-1 rounded-lg transition">📅 網格視角</button>
-              <button @click="calViewMode = 'list'" :class="calViewMode === 'list' ? 'bg-white dark:bg-slate-800 shadow text-indigo-600 dark:text-indigo-400' : 'text-slate-500'" class="px-3 py-1 rounded-lg transition">📋 列表視角</button>
+              <button @click="calViewMode = 'grid'" :class="calViewMode === 'grid' ? 'bg-white dark:bg-slate-800 shadow text-indigo-600 dark:text-indigo-400' : 'text-slate-500'" class="px-3 py-1 rounded-md transition">📅 網格視角</button>
+              <button @click="calViewMode = 'list'" :class="calViewMode === 'list' ? 'bg-white dark:bg-slate-800 shadow text-indigo-600 dark:text-indigo-400' : 'text-slate-500'" class="px-3 py-1 rounded-md transition">📋 列表視角</button>
             </div>
-            <button @click="openAddEventModal(getLocalToday())" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow transition">+ 新增事項</button>
+            <button @click="openCreateEventModal(getLocalToday())" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow transition">+ 新增事項</button>
           </div>
         </div>
 
         <!-- 側邊欄與行事曆主體區塊 -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
           
-          <!-- 左側：分類色彩勾選清單 (Google Calendar Sidebar) -->
+          <!-- 左側：分類色彩勾選與管理 (Google Calendar Sidebar) -->
           <div class="space-y-4 md:col-span-1 border-r border-slate-100 dark:border-slate-700/60 pr-3">
-            <button @click="openAddEventModal(getLocalToday())" class="w-full py-2.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 rounded-xl text-xs font-bold flex items-center justify-center space-x-1 shadow-sm hover:bg-indigo-100 transition">
-              <span>➕ 快速建立日程事項</span>
+            <button @click="openCreateEventModal(getLocalToday())" class="w-full py-2.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 rounded-xl text-xs font-bold flex items-center justify-center space-x-1 shadow-sm hover:bg-indigo-100 transition">
+              <span>➕ 建立新日程事項</span>
             </button>
 
             <div class="bg-slate-50 dark:bg-slate-700/30 p-3.5 rounded-2xl space-y-3 border border-slate-200/60 dark:border-slate-700">
-              <p class="text-xs font-black text-slate-500 dark:text-slate-400 flex items-center justify-between">
-                <span>🎨 日程分類顯示選單</span>
-                <span class="text-[10px] font-normal text-slate-400">勾選過濾</span>
-              </p>
+              <div class="flex items-center justify-between">
+                <p class="text-xs font-black text-slate-600 dark:text-slate-300">🎨 日程分類顯示選單</p>
+                <button @click="showManageCatModal = true" class="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold hover:underline">⚙️ 編輯分類/顏色</button>
+              </div>
 
+              <!-- 動態分類清單與色塊選擇器 -->
               <div class="space-y-2 text-xs font-medium">
-                <label class="flex items-center space-x-2.5 cursor-pointer hover:opacity-80 transition">
-                  <input type="checkbox" x-model="calFilters.todo" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500">
-                  <span class="w-3 h-3 rounded-full bg-indigo-500 shrink-0"></span>
-                  <span class="text-slate-700 dark:text-slate-200">課堂待辦 (Todos)</span>
-                </label>
+                <template x-for="cat in calendarCategories" :key="cat.id">
+                  <div class="flex items-center justify-between group">
+                    <label class="flex items-center space-x-2.5 cursor-pointer hover:opacity-80 transition flex-1">
+                      <input type="checkbox" x-model="cat.visible" @change="saveDataToFirebase()" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500">
+                      <span class="w-3.5 h-3.5 rounded-full shrink-0 shadow-2xs" :style="`background-color: ${cat.color}`"></span>
+                      <span class="text-slate-700 dark:text-slate-200 font-bold truncate" x-text="cat.name"></span>
+                    </label>
 
-                <label class="flex items-center space-x-2.5 cursor-pointer hover:opacity-80 transition">
-                  <input type="checkbox" x-model="calFilters.homework" class="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500">
-                  <span class="w-3 h-3 rounded-full bg-emerald-500 shrink-0"></span>
-                  <span class="text-slate-700 dark:text-slate-200">功課截止 (Homeworks)</span>
-                </label>
+                    <!-- 色彩選擇按鈕 (色盤 Popover 觸發器) -->
+                    <div class="relative">
+                      <button @click="activeColorPickerCatId = (activeColorPickerCatId === cat.id ? null : cat.id)" 
+                              class="w-4 h-4 rounded-full border border-slate-300 opacity-0 group-hover:opacity-100 transition"
+                              :style="`background-color: ${cat.color}`"
+                              title="更改此分類顏色"></button>
 
-                <label class="flex items-center space-x-2.5 cursor-pointer hover:opacity-80 transition">
-                  <input type="checkbox" x-model="calFilters.quiz" class="w-4 h-4 rounded text-purple-600 focus:ring-purple-500">
-                  <span class="w-3 h-3 rounded-full bg-purple-500 shrink-0"></span>
-                  <span class="text-slate-700 dark:text-slate-200">測驗考試 (Quizzes)</span>
-                </label>
-
-                <label class="flex items-center space-x-2.5 cursor-pointer hover:opacity-80 transition">
-                  <input type="checkbox" x-model="calFilters.incident" class="w-4 h-4 rounded text-amber-600 focus:ring-amber-500">
-                  <span class="w-3 h-3 rounded-full bg-amber-500 shrink-0"></span>
-                  <span class="text-slate-700 dark:text-slate-200">課堂紀錄/欠帶 (Incidents)</span>
-                </label>
-
-                <label class="flex items-center space-x-2.5 cursor-pointer hover:opacity-80 transition">
-                  <input type="checkbox" x-model="calFilters.holiday" class="w-4 h-4 rounded text-rose-600 focus:ring-rose-500">
-                  <span class="w-3 h-3 rounded-full bg-rose-500 shrink-0"></span>
-                  <span class="text-slate-700 dark:text-slate-200">香港公眾假期 (Holidays)</span>
-                </label>
+                      <!-- 色盤選單 Modal/Popover (圖片同款多色選單) -->
+                      <div x-show="activeColorPickerCatId === cat.id" @click.outside="activeColorPickerCatId = null"
+                           class="absolute left-0 mt-1 z-50 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 shadow-2xl w-48 space-y-2">
+                        <p class="text-[10px] font-bold text-slate-400">選擇分類代表顏色：</p>
+                        <div class="grid grid-cols-6 gap-1.5">
+                          <template x-for="c in colorPalette" :key="c">
+                            <button @click="cat.color = c; activeColorPickerCatId = null; saveDataToFirebase();" 
+                                    class="w-5 h-5 rounded-full transition transform hover:scale-125 shadow-2xs"
+                                    :style="`background-color: ${c}`"></button>
+                          </template>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </template>
               </div>
             </div>
 
-            <!-- 今日簡要統計 -->
+            <!-- 今日簡要說明 -->
             <div class="p-3 bg-indigo-50/50 dark:bg-slate-700/20 rounded-xl border border-indigo-100 dark:border-slate-700 text-xs space-y-1">
               <p class="font-bold text-indigo-700 dark:text-indigo-300">💡 提示：</p>
-              <p class="text-slate-500 dark:text-slate-400">點擊網格中的日期可快速新增當日日程，點擊卡片標籤可進行快速切換或管理。</p>
+              <p class="text-slate-500 dark:text-slate-400">點擊網格中的日期可建立日程；點擊已有卡片可隨時**修改時間、日期、內容或刪除**。</p>
             </div>
           </div>
 
@@ -221,10 +231,10 @@
                 <div class="text-indigo-500">六</div>
               </div>
 
-              <!-- 月曆 35/42 方格 -->
+              <!-- 月曆網格 -->
               <div class="grid grid-cols-7 gap-1 bg-slate-200 dark:bg-slate-700 p-1 rounded-2xl overflow-hidden">
                 <template x-for="(day, idx) in getCalendarDays()" :key="idx">
-                  <div @click="openAddEventModal(day.dateStr)" 
+                  <div @click="openCreateEventModal(day.dateStr)" 
                        class="min-h-[105px] bg-white dark:bg-slate-800 p-1.5 flex flex-col justify-between group hover:bg-indigo-50/40 dark:hover:bg-slate-700/50 transition cursor-pointer relative"
                        :class="[!day.isCurrentMonth ? 'opacity-40 bg-slate-50/50 dark:bg-slate-850' : '']">
                     
@@ -236,13 +246,13 @@
                     </div>
 
                     <!-- 當日事件標籤清單 -->
-                    <div class="space-y-1 overflow-y-auto max-h-[75px] scrollbar-none flex-1">
-                      <template x-for="item in day.items" :key="item.id || item.text">
-                        <div @click.stop="handleItemClick(item)" 
-                             class="text-[10px] px-1.5 py-0.5 rounded-md truncate font-medium flex items-center justify-between shadow-2xs hover:scale-102 transition"
-                             :class="item.badgeClass" :title="item.title">
-                          <span class="truncate" x-text="item.title"></span>
-                          <template x-if="item.completed"><span>✓</span></template>
+                    <div class="space-y-1 overflow-y-auto max-h-[75px] no-scrollbar flex-1">
+                      <template x-for="item in day.items" :key="item.id">
+                        <div @click.stop="openEditEventModal(item)" 
+                             class="text-[10px] px-1.5 py-0.5 rounded-md truncate font-medium flex items-center justify-between shadow-2xs hover:scale-102 transition border-l-2"
+                             :style="`background-color: ${getCategoryColor(item.categoryId)}18; color: ${getCategoryColor(item.categoryId)}; border-color: ${getCategoryColor(item.categoryId)}`"
+                             :title="item.title">
+                          <span class="truncate" x-text="getEventDisplayTitle(item)"></span>
                         </div>
                       </template>
                     </div>
@@ -255,7 +265,7 @@
             <!-- 2. 列表視角 (List View / Agenda) -->
             <div x-show="calViewMode === 'list'" class="space-y-3">
               <div class="p-3 bg-slate-50 dark:bg-slate-700/30 rounded-xl text-xs font-bold text-slate-500">
-                📋 <span x-text="`${calYear}年 ${calMonthNames[calMonth]}`"></span> 所有日程事項總覽
+                📋 <span x-text="`${calYear}年 ${calMonthNames[calMonth]}`"></span> 所有日程事項列表
               </div>
 
               <div class="space-y-2 max-h-[600px] overflow-y-auto pr-1">
@@ -266,10 +276,12 @@
                       <span class="text-xs text-slate-400 font-bold" x-text="`(${day.items.length} 個事項)`"></span>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <template x-for="item in day.items" :key="item.id || item.text">
-                        <div @click="handleItemClick(item)" class="p-2 rounded-xl text-xs font-bold border flex justify-between items-center cursor-pointer hover:shadow transition" :class="item.badgeClass">
-                          <span class="truncate" x-text="item.title"></span>
-                          <span class="text-[10px] opacity-80" x-text="item.typeName"></span>
+                      <template x-for="item in day.items" :key="item.id">
+                        <div @click="openEditEventModal(item)" 
+                             class="p-2.5 rounded-xl text-xs font-bold border flex justify-between items-center cursor-pointer hover:shadow transition border-l-4"
+                             :style="`background-color: ${getCategoryColor(item.categoryId)}12; color: ${getCategoryColor(item.categoryId)}; border-color: ${getCategoryColor(item.categoryId)}`">
+                          <span class="truncate" x-text="getEventDisplayTitle(item)"></span>
+                          <span class="text-[10px] opacity-70 font-normal ml-2" x-text="getCategoryName(item.categoryId)"></span>
                         </div>
                       </template>
                     </div>
@@ -848,79 +860,91 @@
     </main>
   </div>
 
-  <!-- 彈窗 0：快速新增日程事項彈窗 -->
-  <div x-show="showAddEventModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+  <!-- 彈窗 0A：新增/修改日程事項彈窗 (全面支援日期、分類、時間、內容修改與刪除) -->
+  <div x-show="showEventModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-md shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b pb-2 dark:border-slate-700">
-        <h3 class="font-bold text-lg">➕ 建立新日程事項</h3>
-        <button @click="showAddEventModal = false" class="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+        <h3 class="font-bold text-lg" x-text="isEditEventMode ? '✏️ 修改日程事項' : '➕ 建立新日程事項'"></h3>
+        <button @click="showEventModal = false" class="text-slate-400 hover:text-slate-600 font-bold">✕</button>
       </div>
 
       <div class="space-y-3 text-sm">
         <div>
-          <label class="block text-xs font-bold text-slate-500 mb-1">事項類別</label>
-          <select x-model="newEvent.type" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-700 font-bold">
-            <option value="todo">📌 課堂待辦事項 (Todos)</option>
-            <option value="homework">📚 新增功課死線 (Homework)</option>
-            <option value="quiz">💯 新增測驗考試 (Quiz)</option>
-            <option value="incident">📝 登記課堂事件 (Incident)</option>
+          <label class="block text-xs font-bold text-slate-500 mb-1">日程內容 / 標題</label>
+          <input type="text" x-model="activeEvent.title" placeholder="例如: 3A 開會 / 單元測驗" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-700 font-bold focus:ring-2 focus:ring-indigo-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-500 mb-1">所屬分類</label>
+          <select x-model="activeEvent.categoryId" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-700 font-bold">
+            <template x-for="cat in calendarCategories" :key="cat.id">
+              <option :value="cat.id" x-text="cat.name"></option>
+            </template>
           </select>
         </div>
 
         <div>
           <label class="block text-xs font-bold text-slate-500 mb-1">日期 (Date)</label>
-          <input type="date" x-model="newEvent.date" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-700 font-bold">
+          <input type="date" x-model="activeEvent.date" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-700 font-bold">
         </div>
 
-        <template x-if="newEvent.type === 'todo'">
-          <div>
-            <label class="block text-xs font-bold text-slate-500 mb-1">待辦內容</label>
-            <input type="text" x-model="newEvent.text" placeholder="例: 批改 3A 單元小測" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-700 font-bold">
-          </div>
-        </template>
+        <!-- 時間設定區塊：支援全日活動或具體時間段 -->
+        <div class="p-3 bg-slate-50 dark:bg-slate-700/40 rounded-xl space-y-2 border border-slate-200 dark:border-slate-600">
+          <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" x-model="activeEvent.isAllDay" class="w-4 h-4 rounded text-indigo-600">
+            <span class="text-xs font-bold">全日活動 (All-day)</span>
+          </label>
 
-        <template x-if="newEvent.type === 'homework' || newEvent.type === 'quiz'">
-          <div class="space-y-3">
+          <div x-show="!activeEvent.isAllDay" class="grid grid-cols-2 gap-2 pt-1">
             <div>
-              <label class="block text-xs font-bold text-slate-500 mb-1">項目名稱</label>
-              <input type="text" x-model="newEvent.text" placeholder="例: 作業三 / 單元二測驗" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-700 font-bold">
+              <label class="block text-[10px] text-slate-400">開始時間</label>
+              <input type="time" x-model="activeEvent.startTime" class="w-full px-2 py-1 text-xs border rounded-lg dark:bg-slate-700 font-bold">
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-500 mb-1">適用班別</label>
-              <select x-model="newEvent.class" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-700 font-bold">
-                <template x-for="cls in classes" :key="cls">
-                  <option :value="cls" x-text="cls"></option>
-                </template>
-              </select>
+              <label class="block text-[10px] text-slate-400">結束時間</label>
+              <input type="time" x-model="activeEvent.endTime" class="w-full px-2 py-1 text-xs border rounded-lg dark:bg-slate-700 font-bold">
             </div>
           </div>
-        </template>
+        </div>
+      </div>
 
-        <template x-if="newEvent.type === 'incident'">
-          <div class="space-y-3">
-            <div>
-              <label class="block text-xs font-bold text-slate-500 mb-1">學生</label>
-              <select x-model="newEvent.studentId" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-700 font-bold">
-                <template x-for="s in currentStudents" :key="s.id">
-                  <option :value="s.id" x-text="`${s.no || ''} ${s.name}`"></option>
-                </template>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-500 mb-1">事件類別</label>
-              <select x-model="newEvent.category" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-700 font-bold">
-                <template x-for="cat in presetCategories" :key="cat">
-                  <option :value="cat" x-text="cat"></option>
-                </template>
-              </select>
-            </div>
+      <div class="flex justify-between items-center pt-2 border-t dark:border-slate-700">
+        <div>
+          <template x-if="isEditEventMode">
+            <button @click="deleteActiveEvent()" class="px-3 py-1.5 text-xs bg-red-100 hover:bg-red-200 text-red-700 font-bold rounded-xl transition">🗑️ 刪除日程</button>
+          </template>
+        </div>
+        <div class="flex space-x-2">
+          <button @click="showEventModal = false" class="px-4 py-1.5 text-xs text-slate-500 font-bold">取消</button>
+          <button @click="saveActiveEvent()" class="px-5 py-2 text-xs bg-indigo-600 text-white font-bold rounded-xl shadow">儲存修改</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 彈窗 0B：管理分類與色彩彈窗 -->
+  <div x-show="showManageCatModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-md shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b pb-2 dark:border-slate-700">
+        <h3 class="font-bold text-lg">⚙️ 自訂日程分類與顏色</h3>
+        <button @click="showManageCatModal = false" class="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+      </div>
+
+      <div class="max-h-60 overflow-y-auto space-y-2 pr-1">
+        <template x-for="(cat, idx) in calendarCategories" :key="cat.id">
+          <div class="flex items-center space-x-2 bg-slate-50 dark:bg-slate-700/50 p-2 rounded-xl">
+            <input type="color" x-model="cat.color" @change="saveDataToFirebase()" class="w-8 h-8 rounded-lg cursor-pointer border-0 p-0 shrink-0">
+            <input type="text" x-model="cat.name" @change="saveDataToFirebase()" class="flex-1 px-2.5 py-1 text-xs border rounded-lg dark:bg-slate-700 font-bold">
+            <template x-if="calendarCategories.length > 1">
+              <button @click="deleteCategory(idx)" class="text-red-500 hover:text-red-700 text-xs font-bold px-2">✕</button>
+            </template>
           </div>
         </template>
       </div>
 
-      <div class="flex justify-end space-x-2 pt-2 border-t dark:border-slate-700">
-        <button @click="showAddEventModal = false" class="px-4 py-1.5 text-xs text-slate-500 font-bold">取消</button>
-        <button @click="submitNewEvent()" class="px-5 py-2 text-xs bg-indigo-600 text-white font-bold rounded-xl shadow">儲存事項</button>
+      <div class="pt-2 border-t dark:border-slate-700 flex justify-between items-center">
+        <button @click="addNewCategory()" class="text-xs bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-300 px-3 py-1.5 rounded-lg font-bold">+ 新增分類</button>
+        <button @click="showManageCatModal = false" class="px-5 py-2 text-xs bg-indigo-600 text-white font-bold rounded-xl shadow">完成關閉</button>
       </div>
     </div>
   </div>
@@ -1206,59 +1230,56 @@ const firebaseConfig = {
 
         // 日曆模組 state
         calYear: new Date().getFullYear(),
-        calMonth: new Date().getMonth(), // 0 - 11
-        calViewMode: 'grid', // 'grid' | 'list'
+        calMonth: new Date().getMonth(),
+        calViewMode: 'grid',
         calMonthNames: ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'],
-        calFilters: {
-          todo: true,
-          homework: true,
-          quiz: true,
-          incident: true,
-          holiday: true
-        },
-        showAddEventModal: false,
-        newEvent: {
-          type: 'todo',
-          text: '',
+
+        // 色盤預設集 (Google Calendar 同款專業色盤)
+        colorPalette: [
+          '#b80672', '#d9381e', '#e65100', '#f57c00', '#fbc02d', '#388e3c',
+          '#00897b', '#0097a7', '#0288d1', '#1565c0', '#3f51b5', '#6a1b9a',
+          '#e91e63', '#d81b60', '#8e24aa', '#5e35b1', '#3949ab', '#1e88e5',
+          '#039be5', '#00acc1', '#00897b', '#43a047', '#7cb342', '#c0ca33'
+        ],
+
+        // 可供老師完全自訂名稱與顏色的分類清單
+        calendarCategories: [
+          { id: 'cat_todo', name: '課堂待辦', color: '#3f51b5', visible: true },
+          { id: 'cat_hw', name: '功課截止', color: '#388e3c', visible: true },
+          { id: 'cat_quiz', name: '測驗考試', color: '#6a1b9a', visible: true },
+          { id: 'cat_incident', name: '課堂紀錄', color: '#f57c00', visible: true },
+          { id: 'cat_holiday', name: '公眾假期', color: '#d9381e', visible: true }
+        ],
+
+        activeColorPickerCatId: null,
+        showManageCatModal: false,
+
+        // 獨立日程事件資料庫
+        calendarEvents: [],
+
+        // 日程修改/建立彈窗控制
+        showEventModal: false,
+        isEditEventMode: false,
+        activeEvent: {
+          id: '',
+          title: '',
           date: '',
-          class: '3A',
-          studentId: '',
-          category: '未帶計算機'
+          categoryId: 'cat_todo',
+          isAllDay: true,
+          startTime: '09:00',
+          endTime: '10:00'
         },
 
         // 香港公眾假期資料庫 (2026-2027)
         hkHolidays: {
-          '2026-01-01': '元旦',
-          '2026-02-17': '農曆年初一',
-          '2026-02-18': '農曆年初二',
-          '2026-02-19': '農曆年初三',
-          '2026-04-03': '耶穌受難節',
-          '2026-04-04': '清明節',
-          '2026-04-06': '復活節星期一',
-          '2026-05-01': '勞動節',
-          '2026-05-24': '佛誕翌日',
-          '2026-06-19': '端午節',
-          '2026-07-01': '香港特區成立紀念日',
-          '2026-09-26': '中秋節翌日',
-          '2026-10-01': '國慶日',
-          '2026-10-18': '重陽節翌日',
-          '2026-12-25': '聖誕節',
-          '2026-12-26': '聖誕節後第一個周日',
-          '2027-01-01': '元旦',
-          '2027-02-06': '農曆年初一',
-          '2027-02-08': '農曆年初二',
-          '2027-02-09': '農曆年初三',
-          '2027-03-26': '耶穌受難節',
-          '2027-03-29': '復活節星期一',
-          '2027-04-05': '清明節',
-          '2027-05-01': '勞動節',
-          '2027-05-13': '佛誕',
-          '2027-06-09': '端午節',
-          '2027-07-01': '香港特區成立紀念日',
-          '2027-09-16': '中秋節翌日',
-          '2027-10-01': '國慶日',
-          '2027-10-08': '重陽節',
-          '2027-12-25': '聖誕節'
+          '2026-01-01': '元旦', '2026-02-17': '農曆年初一', '2026-02-18': '農曆年初二', '2026-02-19': '農曆年初三',
+          '2026-04-03': '耶穌受難節', '2026-04-04': '清明節', '2026-04-06': '復活節星期一', '2026-05-01': '勞動節',
+          '2026-05-24': '佛誕翌日', '2026-06-19': '端午節', '2026-07-01': '特區成立紀念日', '2026-09-26': '中秋節翌日',
+          '2026-10-01': '國慶日', '2026-10-18': '重陽節翌日', '2026-12-25': '聖誕節', '2026-12-26': '聖誕節翌日',
+          '2027-01-01': '元旦', '2027-02-06': '農曆年初一', '2027-02-08': '農曆年初二', '2027-02-09': '農曆年初三',
+          '2027-03-26': '耶穌受難節', '2027-03-29': '復活節星期一', '2027-04-05': '清明節', '2027-05-01': '勞動節',
+          '2027-05-13': '佛誕', '2027-06-09': '端午節', '2027-07-01': '特區成立紀念日', '2027-09-16': '中秋節翌日',
+          '2027-10-01': '國慶日', '2027-10-08': '重陽節', '2027-12-25': '聖誕節'
         },
 
         todos: [],
@@ -1342,6 +1363,7 @@ const firebaseConfig = {
           this.seatingAssignments = {};
           this.todos = [];
           this.archives = [];
+          this.calendarEvents = [];
           this.selectedHomeworkId = null;
           this.selectedQuizId = null;
           this.quizConfig = { passPct: 50, lvl2: 70, lvl3: 80, lvl4: 90 };
@@ -1384,7 +1406,6 @@ const firebaseConfig = {
           auth.signOut();
         },
 
-        // 日曆功能邏輯：Prev, Next, Today
         prevMonth() {
           if (this.calMonth === 0) {
             this.calMonth = 11;
@@ -1409,21 +1430,33 @@ const firebaseConfig = {
           this.calMonth = now.getMonth();
         },
 
-        // 計算 Google Calendar 月網格 (35或42格)
+        getCategoryColor(catId) {
+          const cat = this.calendarCategories.find(c => c.id === catId);
+          return cat ? cat.color : '#3f51b5';
+        },
+
+        getCategoryName(catId) {
+          const cat = this.calendarCategories.find(c => c.id === catId);
+          return cat ? cat.name : '日程事項';
+        },
+
+        isCategoryVisible(catId) {
+          const cat = this.calendarCategories.find(c => c.id === catId);
+          return cat ? cat.visible !== false : true;
+        },
+
         getCalendarDays() {
           const year = this.calYear;
           const month = this.calMonth;
           const firstDayOfMonth = new Date(year, month, 1);
           const lastDayOfMonth = new Date(year, month + 1, 0);
           
-          const startDayOfWeek = firstDayOfMonth.getDay(); // 0(日) - 6(六)
+          const startDayOfWeek = firstDayOfMonth.getDay();
           const daysInMonth = lastDayOfMonth.getDate();
           
           const prevMonthLastDay = new Date(year, month, 0).getDate();
-          
           let days = [];
           
-          // 前一個月的尾端天數
           for (let i = startDayOfWeek - 1; i >= 0; i--) {
             const d = prevMonthLastDay - i;
             const prevMonthDate = new Date(year, month - 1, d);
@@ -1437,7 +1470,6 @@ const firebaseConfig = {
             });
           }
           
-          // 當月天數
           for (let d = 1; d <= daysInMonth; d++) {
             const currDate = new Date(year, month, d);
             const dateStr = this.formatDateStr(currDate);
@@ -1450,7 +1482,6 @@ const firebaseConfig = {
             });
           }
           
-          // 下一個月的開頭補齊格子 (湊齊 35 或 42 格)
           const totalSoFar = days.length;
           const targetTotal = totalSoFar > 35 ? 42 : 35;
           const remaining = targetTotal - totalSoFar;
@@ -1469,142 +1500,198 @@ const firebaseConfig = {
           return days;
         },
 
-        // 收集單一日期下的所有事件 (按勾選過濾器篩選)
         getCalendarItemsForDate(dateStr) {
           let items = [];
 
-          // 1. 課堂待辦 (Todos)
-          if (this.calFilters.todo) {
-            this.todos.filter(t => t.date === dateStr).forEach(t => {
+          // 1. 自訂獨立日程事件
+          this.calendarEvents.filter(e => e.date === dateStr).forEach(e => {
+            if (this.isCategoryVisible(e.categoryId)) {
+              items.push({
+                id: e.id,
+                source: 'calendarEvents',
+                title: e.title,
+                date: e.date,
+                categoryId: e.categoryId,
+                isAllDay: e.isAllDay,
+                startTime: e.startTime,
+                endTime: e.endTime
+              });
+            }
+          });
+
+          // 2. 舊待辦事項連動
+          this.todos.filter(t => t.date === dateStr).forEach(t => {
+            if (this.isCategoryVisible('cat_todo')) {
               items.push({
                 id: t.id,
-                type: 'todo',
-                typeName: '待辦',
-                title: `📌 ${t.text}`,
-                completed: t.completed,
-                badgeClass: t.completed ? 'bg-slate-100 text-slate-400 line-through dark:bg-slate-700' : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/80 dark:text-indigo-200'
+                source: 'todos',
+                title: t.text,
+                date: t.date,
+                categoryId: 'cat_todo',
+                isAllDay: true
               });
-            });
-          }
+            }
+          });
 
-          // 2. 功課死線 (Homeworks)
-          if (this.calFilters.homework) {
-            this.homeworks.filter(h => (h.date || this.getLocalToday()) === dateStr).forEach(h => {
+          // 3. 功課連動
+          this.homeworks.filter(h => (h.date || this.getLocalToday()) === dateStr).forEach(h => {
+            if (this.isCategoryVisible('cat_hw')) {
               items.push({
                 id: h.id,
-                type: 'homework',
-                typeName: '功課',
-                title: `📚 [${h.class}] ${h.title}`,
-                badgeClass: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/80 dark:text-emerald-200'
+                source: 'homeworks',
+                title: `[${h.class}] ${h.title}`,
+                date: h.date || dateStr,
+                categoryId: 'cat_hw',
+                isAllDay: true
               });
-            });
-          }
+            }
+          });
 
-          // 3. 測驗考試 (Quizzes)
-          if (this.calFilters.quiz) {
-            this.quizzes.filter(q => (q.date || this.getLocalToday()) === dateStr).forEach(q => {
+          // 4. 測驗連動
+          this.quizzes.filter(q => (q.date || this.getLocalToday()) === dateStr).forEach(q => {
+            if (this.isCategoryVisible('cat_quiz')) {
               items.push({
                 id: q.id,
-                type: 'quiz',
-                typeName: '測驗',
-                title: `💯 [${q.class}] ${q.title}`,
-                badgeClass: 'bg-purple-100 text-purple-800 dark:bg-purple-900/80 dark:text-purple-200'
+                source: 'quizzes',
+                title: `[${q.class}] ${q.title}`,
+                date: q.date || dateStr,
+                categoryId: 'cat_quiz',
+                isAllDay: true
               });
-            });
-          }
+            }
+          });
 
-          // 4. 課堂事件 (Incidents)
-          if (this.calFilters.incident) {
-            this.incidents.filter(i => i.date === dateStr).forEach(i => {
+          // 5. 事件紀錄連動
+          this.incidents.filter(i => i.date === dateStr).forEach(i => {
+            if (this.isCategoryVisible('cat_incident')) {
               items.push({
                 id: i.id,
-                type: 'incident',
-                typeName: '事件',
-                title: `📝 ${this.getStudentName(i.studentId)}: ${i.category}`,
-                badgeClass: 'bg-amber-100 text-amber-800 dark:bg-amber-900/80 dark:text-amber-200'
+                source: 'incidents',
+                title: `${this.getStudentName(i.studentId)}: ${i.category}`,
+                date: i.date,
+                categoryId: 'cat_incident',
+                isAllDay: true
               });
-            });
-          }
+            }
+          });
 
-          // 5. 香港公眾假期 (Holidays)
-          if (this.calFilters.holiday && this.hkHolidays[dateStr]) {
+          // 6. 香港假期
+          if (this.isCategoryVisible('cat_holiday') && this.hkHolidays[dateStr]) {
             items.push({
-              id: 'holiday_' + dateStr,
-              type: 'holiday',
-              typeName: '假期',
+              id: 'hol_' + dateStr,
+              source: 'holiday',
               title: `🎉 ${this.hkHolidays[dateStr]}`,
-              badgeClass: 'bg-rose-100 text-rose-800 dark:bg-rose-900/80 dark:text-rose-200 font-bold'
+              date: dateStr,
+              categoryId: 'cat_holiday',
+              isAllDay: true,
+              isReadOnly: true
             });
           }
 
           return items;
         },
 
-        openAddEventModal(dateStr) {
-          this.newEvent.date = dateStr || this.getLocalToday();
-          this.newEvent.text = '';
-          this.newEvent.type = 'todo';
-          this.newEvent.class = this.currentClass;
-          if (this.currentStudents.length > 0) {
-            this.newEvent.studentId = this.currentStudents[0].id;
+        getEventDisplayTitle(item) {
+          if (!item.isAllDay && item.startTime) {
+            return `${item.startTime} ${item.title}`;
           }
-          this.showAddEventModal = true;
+          return item.title;
         },
 
-        submitNewEvent() {
-          if (!this.newEvent.date) return alert('請選擇日期');
+        openCreateEventModal(dateStr) {
+          this.isEditEventMode = false;
+          this.activeEvent = {
+            id: 'evt_' + Date.now(),
+            title: '',
+            date: dateStr || this.getLocalToday(),
+            categoryId: this.calendarCategories[0] ? this.calendarCategories[0].id : 'cat_todo',
+            isAllDay: true,
+            startTime: '15:00',
+            endTime: '16:00'
+          };
+          this.showEventModal = true;
+        },
 
-          if (this.newEvent.type === 'todo') {
-            if (!this.newEvent.text.trim()) return alert('請輸入待辦內容');
-            this.todos.push({
-              id: 'todo_' + Date.now(),
-              text: this.newEvent.text.trim(),
-              date: this.newEvent.date,
-              completed: false
-            });
-          } else if (this.newEvent.type === 'homework') {
-            if (!this.newEvent.text.trim()) return alert('請輸入功課名稱');
-            this.homeworks.push({
-              id: 'h_' + Date.now(),
-              class: this.newEvent.class,
-              title: this.newEvent.text.trim(),
-              date: this.newEvent.date
-            });
-          } else if (this.newEvent.type === 'quiz') {
-            if (!this.newEvent.text.trim()) return alert('請輸入測驗名稱');
-            this.quizzes.push({
-              id: 'q_' + Date.now(),
-              class: this.newEvent.class,
-              title: this.newEvent.text.trim(),
-              maxScore: 100,
-              date: this.newEvent.date
-            });
-          } else if (this.newEvent.type === 'incident') {
-            if (!this.newEvent.studentId) return alert('請選擇學生');
-            this.incidents.push({
-              id: 'inc_' + Date.now(),
-              studentId: this.newEvent.studentId,
-              date: this.newEvent.date,
-              category: this.newEvent.category,
-              note: ''
-            });
+        openEditEventModal(item) {
+          if (item.isReadOnly) return;
+          this.isEditEventMode = true;
+          this.activeEvent = {
+            id: item.id,
+            source: item.source || 'calendarEvents',
+            title: item.title,
+            date: item.date,
+            categoryId: item.categoryId || 'cat_todo',
+            isAllDay: item.isAllDay !== undefined ? item.isAllDay : true,
+            startTime: item.startTime || '15:00',
+            endTime: item.endTime || '16:00'
+          };
+          this.showEventModal = true;
+        },
+
+        saveActiveEvent() {
+          if (!this.activeEvent.title.trim()) return alert('請輸入內容標題');
+          if (!this.activeEvent.date) return alert('請選擇日期');
+
+          if (this.isEditEventMode) {
+            // 修改現有日程
+            const src = this.activeEvent.source;
+            if (src === 'calendarEvents') {
+              const idx = this.calendarEvents.findIndex(e => e.id === this.activeEvent.id);
+              if (idx !== -1) this.calendarEvents[idx] = { ...this.activeEvent };
+            } else if (src === 'todos') {
+              const t = this.todos.find(item => item.id === this.activeEvent.id);
+              if (t) { t.text = this.activeEvent.title; t.date = this.activeEvent.date; }
+            } else if (src === 'homeworks') {
+              const hw = this.homeworks.find(item => item.id === this.activeEvent.id);
+              if (hw) { hw.title = this.activeEvent.title; hw.date = this.activeEvent.date; }
+            } else if (src === 'quizzes') {
+              const q = this.quizzes.find(item => item.id === this.activeEvent.id);
+              if (q) { q.title = this.activeEvent.title; q.date = this.activeEvent.date; }
+            }
+          } else {
+            // 新增獨立日程
+            this.calendarEvents.push({ ...this.activeEvent });
           }
 
-          this.showAddEventModal = false;
+          this.showEventModal = false;
           this.saveDataToFirebase();
         },
 
-        handleItemClick(item) {
-          if (item.type === 'todo') {
-            this.toggleTodo(item.id);
-          } else if (item.type === 'homework') {
-            this.switchTab('homework');
-            this.selectedHomeworkId = item.id;
-          } else if (item.type === 'quiz') {
-            this.switchTab('quiz');
-            this.selectedQuizId = item.id;
-          } else if (item.type === 'incident') {
-            this.switchTab('incidents');
+        deleteActiveEvent() {
+          if (!confirm('確定要刪除此日程事項嗎？')) return;
+          const src = this.activeEvent.source;
+          const id = this.activeEvent.id;
+
+          if (src === 'calendarEvents') {
+            this.calendarEvents = this.calendarEvents.filter(e => e.id !== id);
+          } else if (src === 'todos') {
+            this.todos = this.todos.filter(t => t.id !== id);
+          } else if (src === 'homeworks') {
+            this.homeworks = this.homeworks.filter(h => h.id !== id);
+          } else if (src === 'quizzes') {
+            this.quizzes = this.quizzes.filter(q => q.id !== id);
+          }
+
+          this.showEventModal = false;
+          this.saveDataToFirebase();
+        },
+
+        addNewCategory() {
+          const newId = 'cat_' + Date.now();
+          const randomColor = this.colorPalette[Math.floor(Math.random() * this.colorPalette.length)];
+          this.calendarCategories.push({
+            id: newId,
+            name: '新自訂分類',
+            color: randomColor,
+            visible: true
+          });
+          this.saveDataToFirebase();
+        },
+
+        deleteCategory(idx) {
+          if (confirm('確定要刪除此分類嗎？')) {
+            this.calendarCategories.splice(idx, 1);
+            this.saveDataToFirebase();
           }
         },
 
@@ -1617,6 +1704,8 @@ const firebaseConfig = {
               if (data.classes) this.classes = data.classes;
               if (data.currentTheme) this.currentTheme = data.currentTheme;
               if (data.presetCategories) this.presetCategories = data.presetCategories;
+              if (data.calendarCategories) this.calendarCategories = data.calendarCategories;
+              if (data.calendarEvents) this.calendarEvents = data.calendarEvents;
               if (data.quizConfig) this.quizConfig = Object.assign({ passPct: 50, lvl2: 70, lvl3: 80, lvl4: 90 }, data.quizConfig);
               if (data.students) this.students = data.students;
               if (data.homeworks) this.homeworks = data.homeworks;
@@ -1648,6 +1737,8 @@ const firebaseConfig = {
               classes: this.classes,
               currentTheme: this.currentTheme,
               presetCategories: this.presetCategories,
+              calendarCategories: this.calendarCategories,
+              calendarEvents: this.calendarEvents,
               quizConfig: this.quizConfig,
               students: this.students,
               homeworks: this.homeworks,
@@ -1718,9 +1809,7 @@ const firebaseConfig = {
 
         getTaskStatusClass(todo) {
           if (todo.completed) return 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-slate-400 line-through';
-          
           const today = this.getLocalToday();
-          
           if (todo.date < today) {
             return 'bg-red-50 dark:bg-red-950/40 border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 animate-pulse';
           } else if (todo.date === today) {
@@ -1732,9 +1821,7 @@ const firebaseConfig = {
 
         getTaskBadge(todo) {
           if (todo.completed) return { text: '✅ 已完成', class: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200 font-bold' };
-          
           const today = this.getLocalToday();
-          
           if (todo.date < today) return { text: '🚨 已逾期', class: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 font-bold' };
           if (todo.date === today) return { text: '⏰ 今天截止', class: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 font-bold' };
           return { text: '📌 進行中', class: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 font-bold' };
@@ -1765,6 +1852,7 @@ const firebaseConfig = {
             this.records = {};
             this.quizScores = {};
             this.incidents = [];
+            this.calendarEvents = [];
             const nextSem = prompt('請輸入新學期的名稱：', '2026-2027 第二學期');
             if (nextSem) this.currentSemesterName = nextSem;
           }
@@ -2595,6 +2683,8 @@ const firebaseConfig = {
             classes: this.classes,
             currentTheme: this.currentTheme,
             presetCategories: this.presetCategories,
+            calendarCategories: this.calendarCategories,
+            calendarEvents: this.calendarEvents,
             quizConfig: this.quizConfig,
             students: this.students,
             homeworks: this.homeworks,
@@ -2628,6 +2718,8 @@ const firebaseConfig = {
                 if (data.classes) this.classes = data.classes;
                 if (data.currentTheme) this.currentTheme = data.currentTheme;
                 if (data.presetCategories) this.presetCategories = data.presetCategories;
+                if (data.calendarCategories) this.calendarCategories = data.calendarCategories;
+                if (data.calendarEvents) this.calendarEvents = data.calendarEvents;
                 if (data.quizConfig) this.quizConfig = data.quizConfig;
                 if (data.students) this.students = data.students;
                 if (data.homeworks) this.homeworks = data.homeworks;
