@@ -115,7 +115,7 @@
           <div class="flex items-center space-x-3">
             <span class="text-sm font-semibold text-slate-500 dark:text-slate-400">當前班別：</span>
             <template x-for="cls in classes" :key="cls">
-              <button @click="currentClass = cls; autoSelectFirstHomework(); autoSelectFirstQuiz(); showQuizChart = false;" 
+              <button @click="selectClass(cls)" 
                       :style="currentClass === cls ? `background-color: ${themeColor}; color: #ffffff;` : ''"
                       :class="currentClass === cls ? 'shadow-md font-bold' : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200'"
                       class="px-4 py-1.5 rounded-xl text-sm transition" x-text="cls"></button>
@@ -158,7 +158,7 @@
         <!-- 側邊欄與行事曆主體區塊 -->
         <div class="flex flex-col md:flex-row gap-5">
           
-          <!-- 左側：緊湊型分類選單 (固定寬度 w-60) -->
+          <!-- 左側：分類選單 -->
           <div class="w-full md:w-60 shrink-0 space-y-4 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-700/60 pr-0 md:pr-4 pb-4 md:pb-0">
             <button @click="openCreateEventModal(getLocalToday())" class="w-full py-2.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 rounded-xl text-xs font-bold flex items-center justify-center space-x-1 shadow-sm hover:bg-indigo-100 transition">
               <span>➕ 建立新日程事項</span>
@@ -208,7 +208,7 @@
             </div>
           </div>
 
-          <!-- 右側：完全拉寬的行事曆主體 (flex-1) -->
+          <!-- 右側：行事曆主體 (網格「今日」全新柔和主題色高亮) -->
           <div class="flex-1">
             
             <!-- 1. 網格視角 (Grid View) -->
@@ -225,19 +225,30 @@
 
               <div class="grid grid-cols-7 gap-1.5 bg-slate-200 dark:bg-slate-700 p-1.5 rounded-2xl overflow-hidden">
                 <template x-for="(day, idx) in getCalendarDays()" :key="idx">
-                  <!-- 格子高度加高至 min-h-[140px] -->
+                  <!-- 格子「今日」全新呈現：整個背景套用柔和主題色 tint + 顯眼主題色邊框 -->
                   <div @click="openCreateEventModal(day.dateStr)" 
-                       class="min-h-[140px] bg-white dark:bg-slate-800 p-2 flex flex-col justify-between group hover:bg-indigo-50/40 dark:hover:bg-slate-700/50 transition cursor-pointer relative rounded-xl"
-                       :class="[!day.isCurrentMonth ? 'opacity-40 bg-slate-50/50 dark:bg-slate-850' : '']">
+                       class="min-h-[140px] p-2 flex flex-col justify-between group hover:bg-indigo-50/40 dark:hover:bg-slate-700/50 transition cursor-pointer relative rounded-xl border"
+                       :style="day.isToday ? `background-color: ${themeColor}1e; border: 2px solid ${themeColor};` : ''"
+                       :class="[
+                         !day.isToday && day.isCurrentMonth ? 'bg-white dark:bg-slate-800 border-transparent' : '',
+                         !day.isCurrentMonth ? 'opacity-40 bg-slate-50/50 dark:bg-slate-850 border-transparent' : ''
+                       ]">
                     
                     <div class="flex justify-between items-center mb-1">
-                      <span class="text-xs font-mono font-bold px-1.5 py-0.5 rounded-full"
-                            :class="day.isToday ? 'bg-indigo-600 text-white shadow' : (day.isCurrentMonth ? 'text-slate-700 dark:text-slate-200' : 'text-slate-400')"
-                            x-text="day.dayNum"></span>
+                      <div class="flex items-center space-x-1">
+                        <span class="text-xs font-mono font-bold px-1 py-0.5 rounded-md"
+                              :style="day.isToday ? `color: ${themeColor}; font-weight: 900;` : ''"
+                              :class="[!day.isToday ? (day.isCurrentMonth ? 'text-slate-700 dark:text-slate-200' : 'text-slate-400') : '']"
+                              x-text="day.dayNum"></span>
+                        <template x-if="day.isToday">
+                          <span class="text-[9px] font-bold px-1 py-0.2 rounded text-white shadow-xs"
+                                :style="`background-color: ${themeColor};`">今天</span>
+                        </template>
+                      </div>
                       <span class="text-xs text-indigo-500 opacity-0 group-hover:opacity-100 font-bold">+</span>
                     </div>
 
-                    <!-- 當日事件卡片清單 (支援時間區段與實色/半透明風格) -->
+                    <!-- 當日事件卡片清單 -->
                     <div class="space-y-1.5 overflow-y-auto max-h-[105px] no-scrollbar flex-1">
                       <template x-for="item in day.items" :key="item.id">
                         <div @click.stop="openEditEventModal(item)" 
@@ -245,7 +256,6 @@
                              :style="getEventCardStyle(item)"
                              :title="item.title">
                           
-                          <!-- 時間段統一放在最前面 (例如 09:00-10:00) -->
                           <template x-if="getItemTimeText(item)">
                             <span class="bg-black/20 dark:bg-white/20 text-[9px] px-1 py-0.2 rounded font-mono shrink-0" x-text="getItemTimeText(item)"></span>
                           </template>
@@ -670,19 +680,19 @@
         </template>
       </div>
 
-      <!-- ==================== 5. 課室座位表 (支援教師/學生視角切換) ==================== -->
+      <!-- ==================== 5. 課室座位表 (支援 180 度教師/學生完全視角切換) ==================== -->
       <div x-show="currentTab === 'seating'" class="space-y-6">
         <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-4">
           <div class="flex flex-wrap justify-between items-center gap-3">
             <div>
               <h2 class="text-lg font-bold" x-text="`🪑 ${currentClass} 班課室座位表`"></h2>
-              <p class="text-xs text-slate-400 font-medium">💡 提示：按住座位卡片可拖動換位；點擊卡片上的 📌 圖示可「釘選固定」位置，智慧隨機排位時該學生會保持不動！</p>
+              <p class="text-xs text-slate-400 font-medium">💡 提示：按住座位卡片可拖動換位；點擊 📌 可釘選固定位置，切換「教師視角」會進行前後與左右 180° 完全翻轉對照！</p>
             </div>
             
             <div class="flex flex-wrap items-center gap-2">
               <!-- 視角切換按鈕 -->
               <button @click="toggleSeatingPerspective()" class="text-xs bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 px-3 py-2 rounded-xl font-bold border border-indigo-200 dark:border-indigo-800 transition shadow-xs">
-                <span x-text="seatingPerspective === 'teacher' ? '👩‍🏫 視角：教師視角 (黑板在下)' : '👨‍🎓 視角：學生視角 (黑板在上)'"></span>
+                <span x-text="seatingPerspective === 'teacher' ? '👩‍🏫 視角：教師視角 (黑板在下・180°翻轉)' : '👨‍🎓 視角：學生視角 (黑板在上)'"></span>
               </button>
 
               <button @click="showGridConfigModal = true" class="text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl font-bold">📐 自訂座位行列規模</button>
@@ -695,13 +705,14 @@
 
           <!-- 學生視角時顯示頂部講台 -->
           <div x-show="seatingPerspective === 'student'" class="bg-slate-800 text-white text-center py-2 rounded-xl font-bold text-xs tracking-widest shadow-inner">
-            🖥️ 講台 / 黑板方向 (前排在上)
+            🖥️ 講台 / 黑板方向 (學生視覺：前排在上)
           </div>
 
+          <!-- 座位陣列網格 (支援動態行列與 180° 對調) -->
           <div id="printableSeatingArea" class="grid gap-3 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-x-auto"
                :style="`grid-template-columns: repeat(${seatingGridCols}, minmax(120px, 1fr));`">
-            <template x-for="r in getDisplayRows()" :key="r">
-              <template x-for="c in seatingGridCols" :key="c">
+            <template x-for="r in getDisplayRows()" :key="'r-'+r">
+              <template x-for="c in getDisplayCols()" :key="'c-'+c">
                 <div class="p-2.5 bg-white dark:bg-slate-800 border rounded-2xl flex flex-col justify-between items-center h-24 shadow-sm relative transition-all duration-150"
                      :class="[
                        getSeatStudent(r, c) ? (isSeatPinned(r, c) ? 'border-amber-400 dark:border-amber-500 ring-2 ring-amber-400/30' : 'border-slate-200 dark:border-slate-700') + ' cursor-grab active:cursor-grabbing hover:border-indigo-500 hover:shadow-md' : 'border-dashed border-slate-300 dark:border-slate-700/60 hover:border-indigo-400'
@@ -746,14 +757,14 @@
             </template>
           </div>
 
-          <!-- 教師視角時顯示底部講台 (前排靠近講台) -->
+          <!-- 教師視角時顯示底部講台 -->
           <div x-show="seatingPerspective === 'teacher'" class="bg-slate-800 text-white text-center py-2 rounded-xl font-bold text-xs tracking-widest shadow-inner">
-            🖥️ 講台 / 黑板方向 (老師視覺：前排在下，靠近講台)
+            🖥️ 講台 / 黑板方向 (老師視覺：前排在下，鏡像180°直接對照學生)
           </div>
         </div>
       </div>
 
-      <!-- ==================== 6. 課堂紀錄頁面 (刪除二次確認機制) ==================== -->
+      <!-- ==================== 6. 課堂紀錄頁面 ==================== -->
       <div x-show="currentTab === 'incidents'" class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 space-y-4">
         <div class="flex flex-wrap justify-between items-center gap-2">
           <h2 class="text-lg font-bold">📋 課堂事件與欠帶紀錄</h2>
@@ -899,7 +910,6 @@
           </select>
         </div>
 
-        <!-- 同步班別選擇區塊 -->
         <div x-show="activeEvent.categoryId === 'cat_hw' || activeEvent.categoryId === 'cat_quiz'">
           <label class="block text-xs font-bold text-indigo-600 dark:text-indigo-400 mb-1">同步建立至班別：</label>
           <select x-model="activeEvent.targetClass" class="w-full px-3 py-1.5 border rounded-xl bg-indigo-50 dark:bg-slate-700 font-bold text-indigo-900 dark:text-indigo-200">
@@ -914,7 +924,6 @@
           <input type="date" x-model="activeEvent.date" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-700 font-bold">
         </div>
 
-        <!-- 時間設定區塊 -->
         <div class="p-3 bg-slate-50 dark:bg-slate-700/40 rounded-xl space-y-2 border border-slate-200 dark:border-slate-600">
           <label class="flex items-center space-x-2 cursor-pointer">
             <input type="checkbox" x-model="activeEvent.isAllDay" class="w-4 h-4 rounded text-indigo-600">
@@ -957,7 +966,7 @@
     </div>
   </div>
 
-  <!-- 彈窗 0B：三步驟時間選擇器 Modal (Z-Index 置頂層 z-[60]) -->
+  <!-- 彈窗 0B：三步驟時間選擇器 Modal -->
   <div x-show="showTimePickerModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
     <div @click.outside="showTimePickerModal = false" class="bg-white dark:bg-slate-800 rounded-2xl p-4 w-full max-w-xs shadow-2xl space-y-3 border border-slate-200 dark:border-slate-700">
       <div class="flex justify-between items-center border-b pb-2 dark:border-slate-700">
@@ -965,7 +974,6 @@
         <span class="text-[10px] text-slate-400">依次點擊 3 下自動關閉</span>
       </div>
 
-      <!-- 步驟 1：選擇 上午 / 下午 -->
       <div x-show="tpStep === 'period'" class="space-y-2">
         <p class="text-xs font-bold text-slate-500 text-center">1. 請選擇時段：</p>
         <div class="grid grid-cols-2 gap-2">
@@ -974,7 +982,6 @@
         </div>
       </div>
 
-      <!-- 步驟 2：選擇 小時 -->
       <div x-show="tpStep === 'hour'" class="space-y-2">
         <div class="flex justify-between items-center">
           <p class="text-xs font-bold text-slate-500">2. 請選擇小時：</p>
@@ -987,7 +994,6 @@
         </div>
       </div>
 
-      <!-- 步驟 3：選擇 分鐘 -->
       <div x-show="tpStep === 'minute'" class="space-y-2">
         <div class="flex justify-between items-center">
           <p class="text-xs font-bold text-slate-500">3. 請選擇分鐘：</p>
@@ -1002,7 +1008,7 @@
     </div>
   </div>
 
-  <!-- 彈窗 0C：功課次序重排 Modal (拖拽排序) -->
+  <!-- 彈窗 0C：功課次序重排 Modal -->
   <div x-show="showReorderHwModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-md shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b pb-2 dark:border-slate-700">
@@ -1037,7 +1043,7 @@
     </div>
   </div>
 
-  <!-- 彈窗 0D：測驗次序重排 Modal (拖拽排序) -->
+  <!-- 彈窗 0D：測驗次序重排 Modal -->
   <div x-show="showReorderQuizModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-md shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b pb-2 dark:border-slate-700">
@@ -1500,7 +1506,7 @@ const firebaseConfig = {
         selectedHomeworkId: null,
         selectedQuizId: null,
 
-        // 座位表狀態 (預設為教師視角：teacher，黑板位於下方)
+        // 座位表狀態 (預設為教師視角：teacher)
         seatingPerspective: 'teacher',
         seatingGridRows: 5,
         seatingGridCols: 6,
@@ -1512,6 +1518,7 @@ const firebaseConfig = {
           this.saveDataToFirebase();
         },
 
+        // 教師視角時前後與左右完全 180° 對調
         getDisplayRows() {
           const rows = [];
           const R = Number(this.seatingGridRows) || 5;
@@ -1521,6 +1528,17 @@ const firebaseConfig = {
             for (let r = 1; r <= R; r++) rows.push(r);
           }
           return rows;
+        },
+
+        getDisplayCols() {
+          const cols = [];
+          const C = Number(this.seatingGridCols) || 6;
+          if (this.seatingPerspective === 'teacher') {
+            for (let c = C; c >= 1; c--) cols.push(c);
+          } else {
+            for (let c = 1; c <= C; c++) cols.push(c);
+          }
+          return cols;
         },
 
         batchInputText: '',
@@ -1563,6 +1581,14 @@ const firebaseConfig = {
           const month = String(d.getMonth() + 1).padStart(2, '0');
           const day = String(d.getDate()).padStart(2, '0');
           return `${year}-${month}-${day}`;
+        },
+
+        selectClass(cls) {
+          this.currentClass = cls;
+          this.autoSelectFirstHomework();
+          this.autoSelectFirstQuiz();
+          this.showQuizChart = false;
+          this.saveDataToFirebase();
         },
 
         resetState() {
@@ -2031,7 +2057,13 @@ const firebaseConfig = {
             const doc = await db.collection('homework_trackers').doc(this.user.uid).get();
             if (doc.exists) {
               const data = doc.data();
-              if (data.classes) this.classes = data.classes;
+              if (data.classes && data.classes.length > 0) this.classes = data.classes;
+              if (data.currentClass && this.classes.includes(data.currentClass)) {
+                this.currentClass = data.currentClass;
+              } else if (this.classes.length > 0) {
+                this.currentClass = this.classes[0];
+              }
+
               if (data.themeColor) this.themeColor = data.themeColor;
               if (data.cardStyle) this.cardStyle = data.cardStyle;
               if (data.presetCategories) this.presetCategories = data.presetCategories;
@@ -2065,7 +2097,9 @@ const firebaseConfig = {
         async saveDataToFirebase() {
           if (!this.user || this.viewingArchiveId) return;
           try {
+            // 移除 merge: true，採用完全覆蓋模式以確保刪除的 Key 徹底抹除
             await db.collection('homework_trackers').doc(this.user.uid).set({
+              currentClass: this.currentClass,
               classes: this.classes,
               themeColor: this.themeColor,
               cardStyle: this.cardStyle,
@@ -2086,7 +2120,7 @@ const firebaseConfig = {
               currentSemesterName: this.currentSemesterName,
               archives: this.archives,
               todos: this.todos
-            }, { merge: true });
+            });
           } catch (e) {
             console.error("同步失敗", e);
           }
@@ -2517,13 +2551,13 @@ const firebaseConfig = {
         },
 
         exportSeatingToExcel() {
-          const C = this.seatingGridCols;
+          const colsList = this.getDisplayCols();
           const rowsList = this.getDisplayRows();
           let rows = [];
 
           for (let r of rowsList) {
             let rowData = {};
-            for (let c = 1; c <= C; c++) {
+            for (let c of colsList) {
               const st = this.getSeatStudent(r, c);
               rowData[`第 ${c} 列`] = st ? `${st.no ? st.no + ' ' : ''}${st.name}` : '(空位)';
             }
@@ -2537,13 +2571,13 @@ const firebaseConfig = {
         },
 
         exportSeatingToWord() {
-          const C = this.seatingGridCols;
+          const colsList = this.getDisplayCols();
           const rowsList = this.getDisplayRows();
           
           let tableRowsHtml = '';
           for (let r of rowsList) {
             tableRowsHtml += '<tr>';
-            for (let c = 1; c <= C; c++) {
+            for (let c of colsList) {
               const st = this.getSeatStudent(r, c);
               const studentText = st ? `<b>#${st.no || '-'}</b><br><span style="font-size: 14pt;">${st.name}</span>` : '<span style="color:#aaa;">空位</span>';
               tableRowsHtml += `<td style="border:1px solid #999; text-align:center; vertical-align:middle; height:60px; padding:8px;">${studentText}</td>`;
@@ -2551,8 +2585,8 @@ const firebaseConfig = {
             tableRowsHtml += '</tr>';
           }
 
-          const boardTopHtml = `<div class="board">🖥️ 講台 / 黑板方向 (前排在上)</div>`;
-          const boardBottomHtml = `<div class="board" style="margin-top: 15px; margin-bottom: 0;">🖥️ 講台 / 黑板方向 (老師視覺：前排靠近講台)</div>`;
+          const boardTopHtml = `<div class="board">🖥️ 講台 / 黑板方向 (學生視覺：前排在上)</div>`;
+          const boardBottomHtml = `<div class="board" style="margin-top: 15px; margin-bottom: 0;">🖥️ 講台 / 黑板方向 (老師視覺：前排靠近講台，鏡像180°直接對照)</div>`;
 
           const wordHtml = `
             <html xmlns:o='urn:schemas-microsoft-microsoft-com:office:office' 
@@ -2675,6 +2709,18 @@ const firebaseConfig = {
         removeStudent(id) {
           if (confirm('確定要刪除這位學生嗎？')) {
             this.students = this.students.filter(s => s.id !== id);
+            
+            // 同步清理該學生的成績與紀錄 Key
+            Object.keys(this.records).forEach(k => {
+              if (k.startsWith(id + '_')) delete this.records[k];
+            });
+            Object.keys(this.quizScores).forEach(k => {
+              if (k.endsWith('_' + id)) delete this.quizScores[k];
+            });
+            if (this.seatingAssignments && this.seatingAssignments[this.currentClass]) {
+              delete this.seatingAssignments[this.currentClass][id];
+            }
+
             this.saveDataToFirebase();
           }
         },
@@ -2728,6 +2774,9 @@ const firebaseConfig = {
           if (!hw) return;
           if (confirm(`確定要刪除功課「${hw.title}」嗎？`)) {
             this.homeworks = this.homeworks.filter(h => h.id !== hw.id);
+            Object.keys(this.records).forEach(k => {
+              if (k.endsWith('_' + hw.id)) delete this.records[k];
+            });
             this.autoSelectFirstHomework();
             this.saveDataToFirebase();
           }
@@ -2834,6 +2883,9 @@ const firebaseConfig = {
           if (!q) return;
           if (confirm(`確定要刪除測驗「${q.title}」嗎？`)) {
             this.quizzes = this.quizzes.filter(item => item.id !== q.id);
+            Object.keys(this.quizScores).forEach(k => {
+              if (k.startsWith(q.id + '_')) delete this.quizScores[k];
+            });
             this.autoSelectFirstQuiz();
             this.showQuizChart = false;
             this.saveDataToFirebase();
