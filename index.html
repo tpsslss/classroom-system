@@ -670,7 +670,7 @@
         </template>
       </div>
 
-      <!-- ==================== 5. 課室座位表 ==================== -->
+      <!-- ==================== 5. 課室座位表 (支援教師/學生視角切換) ==================== -->
       <div x-show="currentTab === 'seating'" class="space-y-6">
         <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-4">
           <div class="flex flex-wrap justify-between items-center gap-3">
@@ -680,6 +680,11 @@
             </div>
             
             <div class="flex flex-wrap items-center gap-2">
+              <!-- 視角切換按鈕 -->
+              <button @click="toggleSeatingPerspective()" class="text-xs bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 px-3 py-2 rounded-xl font-bold border border-indigo-200 dark:border-indigo-800 transition shadow-xs">
+                <span x-text="seatingPerspective === 'teacher' ? '👩‍🏫 視角：教師視角 (黑板在下)' : '👨‍🎓 視角：學生視角 (黑板在上)'"></span>
+              </button>
+
               <button @click="showGridConfigModal = true" class="text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl font-bold">📐 自訂座位行列規模</button>
               <button @click="showSeatingRuleModal = true" class="text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl font-bold">⚙️ 排位進階條件</button>
               <button @click="smartRandomizeSeats()" :style="`background-color: ${themeColor}`" class="text-white text-xs font-bold px-4 py-2 rounded-xl shadow transition">🎲 智慧隨機排位</button>
@@ -688,13 +693,14 @@
             </div>
           </div>
 
-          <div class="bg-slate-800 text-white text-center py-2 rounded-xl font-bold text-xs tracking-widest shadow-inner">
-            🖥️ 講台 / 黑板方向 (前排)
+          <!-- 學生視角時顯示頂部講台 -->
+          <div x-show="seatingPerspective === 'student'" class="bg-slate-800 text-white text-center py-2 rounded-xl font-bold text-xs tracking-widest shadow-inner">
+            🖥️ 講台 / 黑板方向 (前排在上)
           </div>
 
           <div id="printableSeatingArea" class="grid gap-3 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-x-auto"
                :style="`grid-template-columns: repeat(${seatingGridCols}, minmax(120px, 1fr));`">
-            <template x-for="r in seatingGridRows" :key="r">
+            <template x-for="r in getDisplayRows()" :key="r">
               <template x-for="c in seatingGridCols" :key="c">
                 <div class="p-2.5 bg-white dark:bg-slate-800 border rounded-2xl flex flex-col justify-between items-center h-24 shadow-sm relative transition-all duration-150"
                      :class="[
@@ -738,6 +744,11 @@
                 </div>
               </template>
             </template>
+          </div>
+
+          <!-- 教師視角時顯示底部講台 (前排靠近講台) -->
+          <div x-show="seatingPerspective === 'teacher'" class="bg-slate-800 text-white text-center py-2 rounded-xl font-bold text-xs tracking-widest shadow-inner">
+            🖥️ 講台 / 黑板方向 (老師視覺：前排在下，靠近講台)
           </div>
         </div>
       </div>
@@ -1361,8 +1372,8 @@ const firebaseConfig = {
         user: null,
         isDarkMode: false,
         currentTab: 'calendar',
-        themeColor: '#4f46e5', // 全系統動態主題 HEX 色彩
-        cardStyle: 'solid',    // 日程卡片視覺風格：'solid' (實色) | 'translucent' (柔和半透明)
+        themeColor: '#4f46e5',
+        cardStyle: 'solid',
 
         currentSemesterName: '2026-2027 第一學期',
         archives: [],
@@ -1374,7 +1385,6 @@ const firebaseConfig = {
         calViewMode: 'grid',
         calMonthNames: ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'],
 
-        // 色盤預設集
         colorPalette: [
           '#b80672', '#d9381e', '#e65100', '#f57c00', '#fbc02d', '#388e3c',
           '#00897b', '#0097a7', '#0288d1', '#1565c0', '#3f51b5', '#6a1b9a',
@@ -1382,7 +1392,6 @@ const firebaseConfig = {
           '#039be5', '#00acc1', '#00897b', '#43a047', '#7cb342', '#c0ca33'
         ],
 
-        // 預設分類 (已完全移除內建「公眾假期」分類)
         calendarCategories: [
           { id: 'cat_todo', name: '課堂待辦', color: '#3f51b5', visible: true },
           { id: 'cat_hw', name: '功課截止', color: '#388e3c', visible: true },
@@ -1395,14 +1404,10 @@ const firebaseConfig = {
         showReorderHwModal: false,
         showReorderQuizModal: false,
 
-        // 拖拽排序 state
         draggedHwIdx: null,
         draggedQuizIdx: null,
-
-        // 日程事件資料庫
         calendarEvents: [],
 
-        // 日程修改/建立彈窗控制
         showEventModal: false,
         isEditEventMode: false,
         activeEvent: {
@@ -1416,7 +1421,6 @@ const firebaseConfig = {
           endTime: '10:00'
         },
 
-        // 三步驟快選時間 Modal state
         showTimePickerModal: false,
         tpTargetField: 'startTime',
         tpStep: 'period',
@@ -1496,10 +1500,28 @@ const firebaseConfig = {
         selectedHomeworkId: null,
         selectedQuizId: null,
 
+        // 座位表狀態 (預設為教師視角：teacher，黑板位於下方)
+        seatingPerspective: 'teacher',
         seatingGridRows: 5,
         seatingGridCols: 6,
         seatingAssignments: {},
         draggedSeat: null,
+
+        toggleSeatingPerspective() {
+          this.seatingPerspective = this.seatingPerspective === 'teacher' ? 'student' : 'teacher';
+          this.saveDataToFirebase();
+        },
+
+        getDisplayRows() {
+          const rows = [];
+          const R = Number(this.seatingGridRows) || 5;
+          if (this.seatingPerspective === 'teacher') {
+            for (let r = R; r >= 1; r--) rows.push(r);
+          } else {
+            for (let r = 1; r <= R; r++) rows.push(r);
+          }
+          return rows;
+        },
 
         batchInputText: '',
         showCategoryModal: false,
@@ -1554,6 +1576,7 @@ const firebaseConfig = {
           this.quizScores = {};
           this.incidents = [];
           this.seatingAssignments = {};
+          this.seatingPerspective = 'teacher';
           this.todos = [];
           this.archives = [];
           this.calendarEvents = [];
@@ -1588,7 +1611,6 @@ const firebaseConfig = {
 
         loginGoogle() {
           const provider = new firebase.auth.GoogleAuthProvider();
-          // 強制每次點擊登入時都跳出 Google 帳號選擇畫面
           provider.setCustomParameters({
             prompt: 'select_account'
           });
@@ -1696,7 +1718,6 @@ const firebaseConfig = {
         getCalendarItemsForDate(dateStr) {
           let items = [];
 
-          // 1. 自訂獨立日程事件
           this.calendarEvents.filter(e => e.date === dateStr).forEach(e => {
             if (this.isCategoryVisible(e.categoryId)) {
               items.push({
@@ -1712,7 +1733,6 @@ const firebaseConfig = {
             }
           });
 
-          // 2. 功課連動
           this.homeworks.filter(h => (h.date || this.getLocalToday()) === dateStr).forEach(h => {
             if (this.isCategoryVisible('cat_hw')) {
               items.push({
@@ -1728,7 +1748,6 @@ const firebaseConfig = {
             }
           });
 
-          // 3. 測驗連動
           this.quizzes.filter(q => (q.date || this.getLocalToday()) === dateStr).forEach(q => {
             if (this.isCategoryVisible('cat_quiz')) {
               items.push({
@@ -1744,7 +1763,6 @@ const firebaseConfig = {
             }
           });
 
-          // 4. 事件紀錄連動
           this.incidents.filter(i => i.date === dateStr).forEach(i => {
             if (this.isCategoryVisible('cat_incident')) {
               items.push({
@@ -1880,7 +1898,6 @@ const firebaseConfig = {
           this.saveDataToFirebase();
         },
 
-        // 功課與測驗按鈕移位與拖拽排序
         moveHomeworkUp(idx) {
           if (idx <= 0) return;
           const list = this.currentHomeworks;
@@ -2028,6 +2045,7 @@ const firebaseConfig = {
               if (data.quizScores) this.quizScores = data.quizScores;
               if (data.incidents) this.incidents = data.incidents;
               if (data.seatingAssignments) this.seatingAssignments = data.seatingAssignments;
+              if (data.seatingPerspective) this.seatingPerspective = data.seatingPerspective;
               if (data.seatingGridRows) this.seatingGridRows = data.seatingGridRows;
               if (data.seatingGridCols) this.seatingGridCols = data.seatingGridCols;
               if (data.currentSemesterName) this.currentSemesterName = data.currentSemesterName;
@@ -2062,6 +2080,7 @@ const firebaseConfig = {
               quizScores: this.quizScores,
               incidents: this.incidents,
               seatingAssignments: this.seatingAssignments,
+              seatingPerspective: this.seatingPerspective,
               seatingGridRows: this.seatingGridRows,
               seatingGridCols: this.seatingGridCols,
               currentSemesterName: this.currentSemesterName,
@@ -2498,11 +2517,11 @@ const firebaseConfig = {
         },
 
         exportSeatingToExcel() {
-          const R = this.seatingGridRows;
           const C = this.seatingGridCols;
+          const rowsList = this.getDisplayRows();
           let rows = [];
 
-          for (let r = 1; r <= R; r++) {
+          for (let r of rowsList) {
             let rowData = {};
             for (let c = 1; c <= C; c++) {
               const st = this.getSeatStudent(r, c);
@@ -2518,11 +2537,11 @@ const firebaseConfig = {
         },
 
         exportSeatingToWord() {
-          const R = this.seatingGridRows;
           const C = this.seatingGridCols;
+          const rowsList = this.getDisplayRows();
           
           let tableRowsHtml = '';
-          for (let r = 1; r <= R; r++) {
+          for (let r of rowsList) {
             tableRowsHtml += '<tr>';
             for (let c = 1; c <= C; c++) {
               const st = this.getSeatStudent(r, c);
@@ -2531,6 +2550,9 @@ const firebaseConfig = {
             }
             tableRowsHtml += '</tr>';
           }
+
+          const boardTopHtml = `<div class="board">🖥️ 講台 / 黑板方向 (前排在上)</div>`;
+          const boardBottomHtml = `<div class="board" style="margin-top: 15px; margin-bottom: 0;">🖥️ 講台 / 黑板方向 (老師視覺：前排靠近講台)</div>`;
 
           const wordHtml = `
             <html xmlns:o='urn:schemas-microsoft-microsoft-com:office:office' 
@@ -2548,10 +2570,11 @@ const firebaseConfig = {
             </head>
             <body>
               <h2>🪑 ${this.currentClass} 班課室座位表</h2>
-              <div class="board">🖥️ 講台 / 黑板方向 (前排)</div>
+              ${this.seatingPerspective === 'student' ? boardTopHtml : ''}
               <table>
                 ${tableRowsHtml}
               </table>
+              ${this.seatingPerspective === 'teacher' ? boardBottomHtml : ''}
             </body>
             </html>
           `;
@@ -2901,7 +2924,6 @@ const firebaseConfig = {
         },
 
         deleteIncident(id) {
-          // 二次確認防誤觸
           if (!confirm('確定要刪除這筆課堂紀錄嗎？')) return;
           this.incidents = this.incidents.filter(i => i.id !== id);
           this.saveDataToFirebase();
@@ -2923,6 +2945,7 @@ const firebaseConfig = {
             quizScores: this.quizScores,
             incidents: this.incidents,
             seatingAssignments: this.seatingAssignments,
+            seatingPerspective: this.seatingPerspective,
             seatingGridRows: this.seatingGridRows,
             seatingGridCols: this.seatingGridCols,
             currentSemesterName: this.currentSemesterName,
@@ -2959,6 +2982,7 @@ const firebaseConfig = {
                 if (data.quizScores) this.quizScores = data.quizScores;
                 if (data.incidents) this.incidents = data.incidents;
                 if (data.seatingAssignments) this.seatingAssignments = data.seatingAssignments;
+                if (data.seatingPerspective) this.seatingPerspective = data.seatingPerspective;
                 if (data.seatingGridRows) this.seatingGridRows = data.seatingGridRows;
                 if (data.seatingGridCols) this.seatingGridCols = data.seatingGridCols;
                 if (data.currentSemesterName) this.currentSemesterName = data.currentSemesterName;
