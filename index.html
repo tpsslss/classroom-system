@@ -52,9 +52,9 @@
     </div>
   </div>
 
-  <!-- 主介面區塊 (寬度擴展至 max-w-[96%]) -->
+  <!-- 主介面區塊 -->
   <div x-show="user">
-    <!-- 頂部導覽列 (統一為主題顏色背景) -->
+    <!-- 頂部導覽列 (與主題色連動) -->
     <header :style="`background-color: ${themeColor}`" class="text-white shadow-md transition-colors duration-300">
       <div class="max-w-[96%] mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-4">
         <div class="flex items-center space-x-3">
@@ -99,7 +99,7 @@
       </div>
     </header>
 
-    <!-- 主內容區 (寬度擴展至 max-w-[96%]) -->
+    <!-- 主內容區 -->
     <main class="max-w-[96%] mx-auto px-4 py-6 space-y-6">
       
       <!-- 當前班別選擇列 -->
@@ -143,7 +143,6 @@
           </div>
 
           <div class="flex items-center space-x-2">
-            <!-- 視角切換與卡片風格選擇按鈕 -->
             <div class="bg-slate-100 dark:bg-slate-700 p-1 rounded-xl flex items-center space-x-1 text-xs font-bold">
               <button @click="calViewMode = 'grid'" :class="calViewMode === 'grid' ? 'bg-white dark:bg-slate-800 shadow text-indigo-600 dark:text-indigo-400' : 'text-slate-500'" class="px-3 py-1 rounded-md transition">📅 網格視角</button>
               <button @click="calViewMode = 'list'" :class="calViewMode === 'list' ? 'bg-white dark:bg-slate-800 shadow text-indigo-600 dark:text-indigo-400' : 'text-slate-500'" class="px-3 py-1 rounded-md transition">📋 列表視角</button>
@@ -225,7 +224,6 @@
 
               <div class="grid grid-cols-7 gap-1.5 bg-slate-200 dark:bg-slate-700 p-1.5 rounded-2xl overflow-hidden">
                 <template x-for="(day, idx) in getCalendarDays()" :key="idx">
-                  <!-- 格子「今日」全新呈現：整個背景套用柔和主題色 tint + 顯眼主題色邊框 -->
                   <div @click="openCreateEventModal(day.dateStr)" 
                        class="min-h-[140px] p-2 flex flex-col justify-between group hover:bg-indigo-50/40 dark:hover:bg-slate-700/50 transition cursor-pointer relative rounded-xl border"
                        :style="day.isToday ? `background-color: ${themeColor}1e; border: 2px solid ${themeColor};` : ''"
@@ -680,21 +678,16 @@
         </template>
       </div>
 
-      <!-- ==================== 5. 課室座位表 (支援 180 度教師/學生完全視角切換) ==================== -->
+      <!-- ==================== 5. 課室座位表 (固定黑板在下方簡潔版) ==================== -->
       <div x-show="currentTab === 'seating'" class="space-y-6">
         <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-4">
           <div class="flex flex-wrap justify-between items-center gap-3">
             <div>
               <h2 class="text-lg font-bold" x-text="`🪑 ${currentClass} 班課室座位表`"></h2>
-              <p class="text-xs text-slate-400 font-medium">💡 提示：按住座位卡片可拖動換位；點擊 📌 可釘選固定位置，切換「教師視角」會進行前後與左右 180° 完全翻轉對照！</p>
+              <p class="text-xs text-slate-400 font-medium">💡 提示：按住座位卡片可拖動換位；點擊 📌 可釘選固定位置。</p>
             </div>
             
             <div class="flex flex-wrap items-center gap-2">
-              <!-- 視角切換按鈕 -->
-              <button @click="toggleSeatingPerspective()" class="text-xs bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 px-3 py-2 rounded-xl font-bold border border-indigo-200 dark:border-indigo-800 transition shadow-xs">
-                <span x-text="seatingPerspective === 'teacher' ? '👩‍🏫 視角：教師視角 (黑板在下・180°翻轉)' : '👨‍🎓 視角：學生視角 (黑板在上)'"></span>
-              </button>
-
               <button @click="showGridConfigModal = true" class="text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl font-bold">📐 自訂座位行列規模</button>
               <button @click="showSeatingRuleModal = true" class="text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl font-bold">⚙️ 排位進階條件</button>
               <button @click="smartRandomizeSeats()" :style="`background-color: ${themeColor}`" class="text-white text-xs font-bold px-4 py-2 rounded-xl shadow transition">🎲 智慧隨機排位</button>
@@ -703,12 +696,7 @@
             </div>
           </div>
 
-          <!-- 學生視角時顯示頂部講台 -->
-          <div x-show="seatingPerspective === 'student'" class="bg-slate-800 text-white text-center py-2 rounded-xl font-bold text-xs tracking-widest shadow-inner">
-            🖥️ 講台 / 黑板方向 (學生視覺：前排在上)
-          </div>
-
-          <!-- 座位陣列網格 (支援動態行列與 180° 對調) -->
+          <!-- 座位陣列網格 -->
           <div id="printableSeatingArea" class="grid gap-3 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-x-auto"
                :style="`grid-template-columns: repeat(${seatingGridCols}, minmax(120px, 1fr));`">
             <template x-for="r in getDisplayRows()" :key="'r-'+r">
@@ -757,9 +745,9 @@
             </template>
           </div>
 
-          <!-- 教師視角時顯示底部講台 -->
-          <div x-show="seatingPerspective === 'teacher'" class="bg-slate-800 text-white text-center py-2 rounded-xl font-bold text-xs tracking-widest shadow-inner">
-            🖥️ 講台 / 黑板方向 (老師視覺：前排在下，鏡像180°直接對照學生)
+          <!-- 底部講台/黑板指示 -->
+          <div class="bg-slate-800 text-white text-center py-2 rounded-xl font-bold text-xs tracking-widest shadow-inner">
+            🖥️ 講台 / 黑板方向
           </div>
         </div>
       </div>
@@ -1311,7 +1299,7 @@
         </template>
       </div>
       <div class="flex space-x-2 pt-2 border-t dark:border-slate-700">
-        <input type="text" x-model="newCategoryName" placeholder="新增選項 (如: 未帶課本)" class="flex-1 px-3 py-1.5 text-sm border rounded-xl dark:bg-slate-700">
+        <input type="text" x-model="newCategoryName" placeholder="新增選項 (如: 未帶計算機)" class="flex-1 px-3 py-1.5 text-sm border rounded-xl dark:bg-slate-700">
         <button @click="addCategory()" :style="`background-color: ${themeColor}`" class="text-white font-bold text-xs px-3 py-1.5 rounded-xl">新增</button>
       </div>
       <div class="flex justify-end pt-2">
@@ -1506,39 +1494,20 @@ const firebaseConfig = {
         selectedHomeworkId: null,
         selectedQuizId: null,
 
-        // 座位表狀態 (預設為教師視角：teacher)
-        seatingPerspective: 'teacher',
+        // 座位表狀態
         seatingGridRows: 5,
         seatingGridCols: 6,
         seatingAssignments: {},
         draggedSeat: null,
 
-        toggleSeatingPerspective() {
-          this.seatingPerspective = this.seatingPerspective === 'teacher' ? 'student' : 'teacher';
-          this.saveDataToFirebase();
-        },
-
-        // 教師視角時前後與左右完全 180° 對調
         getDisplayRows() {
-          const rows = [];
           const R = Number(this.seatingGridRows) || 5;
-          if (this.seatingPerspective === 'teacher') {
-            for (let r = R; r >= 1; r--) rows.push(r);
-          } else {
-            for (let r = 1; r <= R; r++) rows.push(r);
-          }
-          return rows;
+          return Array.from({ length: R }, (_, i) => i + 1);
         },
 
         getDisplayCols() {
-          const cols = [];
           const C = Number(this.seatingGridCols) || 6;
-          if (this.seatingPerspective === 'teacher') {
-            for (let c = C; c >= 1; c--) cols.push(c);
-          } else {
-            for (let c = 1; c <= C; c++) cols.push(c);
-          }
-          return cols;
+          return Array.from({ length: C }, (_, i) => i + 1);
         },
 
         batchInputText: '',
@@ -1602,7 +1571,6 @@ const firebaseConfig = {
           this.quizScores = {};
           this.incidents = [];
           this.seatingAssignments = {};
-          this.seatingPerspective = 'teacher';
           this.todos = [];
           this.archives = [];
           this.calendarEvents = [];
@@ -2077,7 +2045,6 @@ const firebaseConfig = {
               if (data.quizScores) this.quizScores = data.quizScores;
               if (data.incidents) this.incidents = data.incidents;
               if (data.seatingAssignments) this.seatingAssignments = data.seatingAssignments;
-              if (data.seatingPerspective) this.seatingPerspective = data.seatingPerspective;
               if (data.seatingGridRows) this.seatingGridRows = data.seatingGridRows;
               if (data.seatingGridCols) this.seatingGridCols = data.seatingGridCols;
               if (data.currentSemesterName) this.currentSemesterName = data.currentSemesterName;
@@ -2097,7 +2064,6 @@ const firebaseConfig = {
         async saveDataToFirebase() {
           if (!this.user || this.viewingArchiveId) return;
           try {
-            // 移除 merge: true，採用完全覆蓋模式以確保刪除的 Key 徹底抹除
             await db.collection('homework_trackers').doc(this.user.uid).set({
               currentClass: this.currentClass,
               classes: this.classes,
@@ -2114,7 +2080,6 @@ const firebaseConfig = {
               quizScores: this.quizScores,
               incidents: this.incidents,
               seatingAssignments: this.seatingAssignments,
-              seatingPerspective: this.seatingPerspective,
               seatingGridRows: this.seatingGridRows,
               seatingGridCols: this.seatingGridCols,
               currentSemesterName: this.currentSemesterName,
@@ -2585,9 +2550,6 @@ const firebaseConfig = {
             tableRowsHtml += '</tr>';
           }
 
-          const boardTopHtml = `<div class="board">🖥️ 講台 / 黑板方向 (學生視覺：前排在上)</div>`;
-          const boardBottomHtml = `<div class="board" style="margin-top: 15px; margin-bottom: 0;">🖥️ 講台 / 黑板方向 (老師視覺：前排靠近講台，鏡像180°直接對照)</div>`;
-
           const wordHtml = `
             <html xmlns:o='urn:schemas-microsoft-microsoft-com:office:office' 
                   xmlns:w='urn:schemas-microsoft-microsoft-com:office:word' 
@@ -2598,17 +2560,16 @@ const firebaseConfig = {
               <style>
                 body { font-family: 'Microsoft JhengHei', Arial, sans-serif; }
                 h2 { text-align: center; color: #1e293b; margin-bottom: 20px; }
-                .board { background-color: #1e293b; color: #ffffff; text-align: center; padding: 10px; font-weight: bold; border-radius: 6px; margin-bottom: 15px; }
+                .board { background-color: #1e293b; color: #ffffff; text-align: center; padding: 10px; font-weight: bold; border-radius: 6px; margin-top: 15px; }
                 table { width: 100%; border-collapse: collapse; table-layout: fixed; }
               </style>
             </head>
             <body>
               <h2>🪑 ${this.currentClass} 班課室座位表</h2>
-              ${this.seatingPerspective === 'student' ? boardTopHtml : ''}
               <table>
                 ${tableRowsHtml}
               </table>
-              ${this.seatingPerspective === 'teacher' ? boardBottomHtml : ''}
+              <div class="board">🖥️ 講台 / 黑板方向</div>
             </body>
             </html>
           `;
@@ -2710,7 +2671,6 @@ const firebaseConfig = {
           if (confirm('確定要刪除這位學生嗎？')) {
             this.students = this.students.filter(s => s.id !== id);
             
-            // 同步清理該學生的成績與紀錄 Key
             Object.keys(this.records).forEach(k => {
               if (k.startsWith(id + '_')) delete this.records[k];
             });
@@ -2997,7 +2957,6 @@ const firebaseConfig = {
             quizScores: this.quizScores,
             incidents: this.incidents,
             seatingAssignments: this.seatingAssignments,
-            seatingPerspective: this.seatingPerspective,
             seatingGridRows: this.seatingGridRows,
             seatingGridCols: this.seatingGridCols,
             currentSemesterName: this.currentSemesterName,
@@ -3034,7 +2993,6 @@ const firebaseConfig = {
                 if (data.quizScores) this.quizScores = data.quizScores;
                 if (data.incidents) this.incidents = data.incidents;
                 if (data.seatingAssignments) this.seatingAssignments = data.seatingAssignments;
-                if (data.seatingPerspective) this.seatingPerspective = data.seatingPerspective;
                 if (data.seatingGridRows) this.seatingGridRows = data.seatingGridRows;
                 if (data.seatingGridCols) this.seatingGridCols = data.seatingGridCols;
                 if (data.currentSemesterName) this.currentSemesterName = data.currentSemesterName;
