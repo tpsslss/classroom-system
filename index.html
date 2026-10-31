@@ -143,15 +143,19 @@
           </div>
 
           <div class="flex items-center space-x-2">
-            <div class="bg-slate-100 dark:bg-slate-700 p-1 rounded-xl flex text-xs font-bold">
+            <!-- 視角切換與卡片風格選擇按鈕 -->
+            <div class="bg-slate-100 dark:bg-slate-700 p-1 rounded-xl flex items-center space-x-1 text-xs font-bold">
               <button @click="calViewMode = 'grid'" :class="calViewMode === 'grid' ? 'bg-white dark:bg-slate-800 shadow text-indigo-600 dark:text-indigo-400' : 'text-slate-500'" class="px-3 py-1 rounded-md transition">📅 網格視角</button>
               <button @click="calViewMode = 'list'" :class="calViewMode === 'list' ? 'bg-white dark:bg-slate-800 shadow text-indigo-600 dark:text-indigo-400' : 'text-slate-500'" class="px-3 py-1 rounded-md transition">📋 列表視角</button>
+              <button @click="toggleCardStyle()" class="px-2.5 py-1 rounded-md transition bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 shadow-xs ml-1" title="點擊切換卡片顏色風格">
+                <span x-text="cardStyle === 'solid' ? '🎨 實色' : '✨ 柔和半透明'"></span>
+              </button>
             </div>
             <button @click="openCreateEventModal(getLocalToday())" :style="`background-color: ${themeColor}`" class="text-white font-bold text-xs px-4 py-2 rounded-xl shadow transition">+ 新增事項</button>
           </div>
         </div>
 
-        <!-- 側邊欄與行事曆主體區塊 (優化比例) -->
+        <!-- 側邊欄與行事曆主體區塊 -->
         <div class="flex flex-col md:flex-row gap-5">
           
           <!-- 左側：緊湊型分類選單 (固定寬度 w-60) -->
@@ -233,17 +237,17 @@
                       <span class="text-xs text-indigo-500 opacity-0 group-hover:opacity-100 font-bold">+</span>
                     </div>
 
-                    <!-- 當日事件卡片清單 (時間標籤統一顯示於最左側) -->
+                    <!-- 當日事件卡片清單 (支援時間區段與實色/半透明風格) -->
                     <div class="space-y-1.5 overflow-y-auto max-h-[105px] no-scrollbar flex-1">
                       <template x-for="item in day.items" :key="item.id">
                         <div @click.stop="openEditEventModal(item)" 
-                             class="text-[11px] px-2 py-1 rounded-lg font-bold text-white shadow-xs hover:scale-102 transition flex items-center space-x-1 cursor-pointer"
-                             :style="`background-color: ${getCategoryColor(item.categoryId)}`"
+                             class="text-[11px] px-2 py-1 rounded-lg font-bold shadow-xs hover:scale-102 transition flex items-center space-x-1 cursor-pointer"
+                             :style="getEventCardStyle(item)"
                              :title="item.title">
                           
-                          <!-- 時間統一放在最前面 -->
-                          <template x-if="!item.isAllDay && item.startTime">
-                            <span class="bg-black/25 text-[9px] px-1 py-0.2 rounded font-mono shrink-0" x-text="item.startTime"></span>
+                          <!-- 時間段統一放在最前面 (例如 09:00-10:00) -->
+                          <template x-if="getItemTimeText(item)">
+                            <span class="bg-black/20 dark:bg-white/20 text-[9px] px-1 py-0.2 rounded font-mono shrink-0" x-text="getItemTimeText(item)"></span>
                           </template>
                           
                           <span class="truncate" x-text="item.title"></span>
@@ -272,11 +276,11 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                       <template x-for="item in day.items" :key="item.id">
                         <div @click="openEditEventModal(item)" 
-                             class="p-2.5 rounded-xl text-xs font-bold text-white flex justify-between items-center cursor-pointer hover:shadow transition"
-                             :style="`background-color: ${getCategoryColor(item.categoryId)}`">
+                             class="p-2.5 rounded-xl text-xs font-bold flex justify-between items-center cursor-pointer hover:shadow transition"
+                             :style="getEventCardStyle(item)">
                           <div class="flex items-center space-x-1.5 truncate">
-                            <template x-if="!item.isAllDay && item.startTime">
-                              <span class="bg-black/25 text-[9px] px-1 py-0.5 rounded font-mono" x-text="item.startTime"></span>
+                            <template x-if="getItemTimeText(item)">
+                              <span class="bg-black/20 dark:bg-white/20 text-[9px] px-1 py-0.5 rounded font-mono" x-text="getItemTimeText(item)"></span>
                             </template>
                             <span class="truncate" x-text="item.title"></span>
                           </div>
@@ -738,7 +742,7 @@
         </div>
       </div>
 
-      <!-- ==================== 6. 課堂紀錄頁面 ==================== -->
+      <!-- ==================== 6. 課堂紀錄頁面 (刪除二次確認機制) ==================== -->
       <div x-show="currentTab === 'incidents'" class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 space-y-4">
         <div class="flex flex-wrap justify-between items-center gap-2">
           <h2 class="text-lg font-bold">📋 課堂事件與欠帶紀錄</h2>
@@ -942,7 +946,7 @@
     </div>
   </div>
 
-  <!-- 彈窗 0B：三步驟時間選擇器 Modal (修復 Z-Index 至 z-[60]) -->
+  <!-- 彈窗 0B：三步驟時間選擇器 Modal (Z-Index 置頂層 z-[60]) -->
   <div x-show="showTimePickerModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
     <div @click.outside="showTimePickerModal = false" class="bg-white dark:bg-slate-800 rounded-2xl p-4 w-full max-w-xs shadow-2xl space-y-3 border border-slate-200 dark:border-slate-700">
       <div class="flex justify-between items-center border-b pb-2 dark:border-slate-700">
@@ -987,7 +991,7 @@
     </div>
   </div>
 
-  <!-- 彈窗 0C：功課次序重排 Modal (新增滑鼠拖拽排序) -->
+  <!-- 彈窗 0C：功課次序重排 Modal (拖拽排序) -->
   <div x-show="showReorderHwModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-md shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b pb-2 dark:border-slate-700">
@@ -1022,7 +1026,7 @@
     </div>
   </div>
 
-  <!-- 彈窗 0D：測驗次序重排 Modal (新增滑鼠拖拽排序) -->
+  <!-- 彈窗 0D：測驗次序重排 Modal (拖拽排序) -->
   <div x-show="showReorderQuizModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-md shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b pb-2 dark:border-slate-700">
@@ -1358,6 +1362,7 @@ const firebaseConfig = {
         isDarkMode: false,
         currentTab: 'calendar',
         themeColor: '#4f46e5', // 全系統動態主題 HEX 色彩
+        cardStyle: 'solid',    // 日程卡片視覺風格：'solid' (實色) | 'translucent' (柔和半透明)
 
         currentSemesterName: '2026-2027 第一學期',
         archives: [],
@@ -1377,12 +1382,12 @@ const firebaseConfig = {
           '#039be5', '#00acc1', '#00897b', '#43a047', '#7cb342', '#c0ca33'
         ],
 
+        // 預設分類 (已完全移除內建「公眾假期」分類)
         calendarCategories: [
           { id: 'cat_todo', name: '課堂待辦', color: '#3f51b5', visible: true },
           { id: 'cat_hw', name: '功課截止', color: '#388e3c', visible: true },
           { id: 'cat_quiz', name: '測驗考試', color: '#6a1b9a', visible: true },
-          { id: 'cat_incident', name: '課堂紀錄', color: '#f57c00', visible: true },
-          { id: 'cat_holiday', name: '公眾假期', color: '#d9381e', visible: true }
+          { id: 'cat_incident', name: '課堂紀錄', color: '#f57c00', visible: true }
         ],
 
         activeColorPickerCatId: null,
@@ -1461,6 +1466,27 @@ const firebaseConfig = {
           let dispH = h % 12;
           if (dispH === 0) dispH = 12;
           return `${period} ${String(dispH).padStart(2, '0')}:${mStr || '00'}`;
+        },
+
+        toggleCardStyle() {
+          this.cardStyle = this.cardStyle === 'solid' ? 'translucent' : 'solid';
+          this.saveDataToFirebase();
+        },
+
+        getEventCardStyle(item) {
+          const color = this.getCategoryColor(item.categoryId);
+          if (this.cardStyle === 'translucent') {
+            return `background-color: ${color}22; color: ${color}; border: 1px solid ${color}66;`;
+          }
+          return `background-color: ${color}; color: #ffffff;`;
+        },
+
+        getItemTimeText(item) {
+          if (item.isAllDay || !item.startTime) return '';
+          if (item.endTime && item.endTime !== item.startTime) {
+            return `${item.startTime}-${item.endTime}`;
+          }
+          return item.startTime;
         },
 
         todos: [],
@@ -1562,7 +1588,7 @@ const firebaseConfig = {
 
         loginGoogle() {
           const provider = new firebase.auth.GoogleAuthProvider();
-          // 修正：每次點擊登入時強制跳出 Google 帳號選擇視窗
+          // 強制每次點擊登入時都跳出 Google 帳號選擇畫面
           provider.setCustomParameters({
             prompt: 'select_account'
           });
@@ -1686,7 +1712,7 @@ const firebaseConfig = {
             }
           });
 
-          // 2. 功課連動 (保留全日與時間資料)
+          // 2. 功課連動
           this.homeworks.filter(h => (h.date || this.getLocalToday()) === dateStr).forEach(h => {
             if (this.isCategoryVisible('cat_hw')) {
               items.push({
@@ -1702,7 +1728,7 @@ const firebaseConfig = {
             }
           });
 
-          // 3. 測驗連動 (保留全日與時間資料)
+          // 3. 測驗連動
           this.quizzes.filter(q => (q.date || this.getLocalToday()) === dateStr).forEach(q => {
             if (this.isCategoryVisible('cat_quiz')) {
               items.push({
@@ -1753,7 +1779,6 @@ const firebaseConfig = {
         openEditEventModal(item) {
           if (item.isReadOnly) return;
           this.isEditEventMode = true;
-          // 自動過濾標題開頭的 [3A] 或 [3B] 等班別前綴，避免重複疊加
           let cleanTitle = (item.title || '').replace(/^\[[^\]]+\]\s*/, '');
           this.activeEvent = {
             id: item.id,
@@ -1773,7 +1798,6 @@ const firebaseConfig = {
           if (!this.activeEvent.title.trim()) return alert('請輸入內容標題');
           if (!this.activeEvent.date) return alert('請選擇日期');
 
-          // 去除開頭多餘的班別標籤
           let titleToSave = this.activeEvent.title.trim().replace(/^\[[^\]]+\]\s*/, '');
 
           if (this.activeEvent.categoryId === 'cat_hw') {
@@ -1992,6 +2016,7 @@ const firebaseConfig = {
               const data = doc.data();
               if (data.classes) this.classes = data.classes;
               if (data.themeColor) this.themeColor = data.themeColor;
+              if (data.cardStyle) this.cardStyle = data.cardStyle;
               if (data.presetCategories) this.presetCategories = data.presetCategories;
               if (data.calendarCategories) this.calendarCategories = data.calendarCategories;
               if (data.calendarEvents) this.calendarEvents = data.calendarEvents;
@@ -2025,6 +2050,7 @@ const firebaseConfig = {
             await db.collection('homework_trackers').doc(this.user.uid).set({
               classes: this.classes,
               themeColor: this.themeColor,
+              cardStyle: this.cardStyle,
               presetCategories: this.presetCategories,
               calendarCategories: this.calendarCategories,
               calendarEvents: this.calendarEvents,
@@ -2875,6 +2901,8 @@ const firebaseConfig = {
         },
 
         deleteIncident(id) {
+          // 二次確認防誤觸
+          if (!confirm('確定要刪除這筆課堂紀錄嗎？')) return;
           this.incidents = this.incidents.filter(i => i.id !== id);
           this.saveDataToFirebase();
         },
@@ -2883,6 +2911,7 @@ const firebaseConfig = {
           const data = {
             classes: this.classes,
             themeColor: this.themeColor,
+            cardStyle: this.cardStyle,
             presetCategories: this.presetCategories,
             calendarCategories: this.calendarCategories,
             calendarEvents: this.calendarEvents,
@@ -2918,6 +2947,7 @@ const firebaseConfig = {
               if (confirm('匯入 JSON 將會覆蓋目前的數據，確定繼續嗎？')) {
                 if (data.classes) this.classes = data.classes;
                 if (data.themeColor) this.themeColor = data.themeColor;
+                if (data.cardStyle) this.cardStyle = data.cardStyle;
                 if (data.presetCategories) this.presetCategories = data.presetCategories;
                 if (data.calendarCategories) this.calendarCategories = data.calendarCategories;
                 if (data.calendarEvents) this.calendarEvents = data.calendarEvents;
