@@ -1277,7 +1277,7 @@
             </div>
 
             <div class="text-xs">
-              <span class="text-slate-400 font-medium">避開同桌同學（矛盾不相鄰）：</span>
+              <span class="text-slate-400 font-medium">不相鄰：</span>
               <div class="flex flex-wrap gap-1 mt-1">
                 <template x-for="other in currentStudents.filter(o => o.id !== s.id)" :key="other.id">
                   <button @click="toggleAvoidStudent(s, other.id)" 
