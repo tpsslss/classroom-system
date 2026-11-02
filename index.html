@@ -235,10 +235,10 @@
             </div>
           </div>
 
-          <!-- 右側：行事曆主體 (加入 min-w-0 與拖拽放下處理) -->
+          <!-- 右側：行事曆主體 -->
           <div class="flex-1 min-w-0">
             
-            <!-- 1. 網格視角 (Grid View - 支援 Drag & Drop 日期變更) -->
+            <!-- 1. 網格視角 (Grid View) -->
             <div x-show="calViewMode === 'grid'" class="space-y-1">
               <div class="grid grid-cols-7 gap-1 text-center text-xs font-bold text-slate-400 pb-1">
                 <div class="text-rose-500">日</div>
@@ -276,7 +276,7 @@
                       <span class="text-xs text-indigo-500 opacity-0 group-hover:opacity-100 font-bold">+</span>
                     </div>
 
-                    <!-- 當日事件卡片清單 (支援按住拖拽 Drag & Drop) -->
+                    <!-- 當日事件卡片清單 -->
                     <div class="space-y-1.5 overflow-y-auto max-h-[105px] no-scrollbar flex-1">
                       <template x-for="item in day.items" :key="item.id">
                         <div @click.stop="openEditEventModal(item)" 
@@ -351,11 +351,11 @@
                 <option :value="hw.id" x-text="hw.title"></option>
               </template>
             </select>
-            <button @click="editHomeworkName()" class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 font-medium">✏️ 編輯</button>
+            <button @click="openEditHomeworkModal()" class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 font-medium">✏️ 編輯</button>
             <button @click="showReorderHwModal = true" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs px-3 py-1.5 rounded-lg border border-indigo-200 font-bold">↕️ 調整次序</button>
             <button @click="deleteCurrentHomework()" class="bg-slate-100 hover:bg-red-50 dark:bg-slate-700 text-red-600 text-xs px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 font-medium">🗑️ 刪除</button>
           </div>
-          <button @click="addHomeworkPrompt()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow transition">+ 新增功課</button>
+          <button @click="openAddHomeworkModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow transition">+ 新增功課</button>
         </div>
 
         <template x-if="getSelectedHomework()">
@@ -391,7 +391,7 @@
               <div class="flex flex-wrap justify-between items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-700">
                 <h3 class="text-lg font-bold flex items-center space-x-2">
                   <span x-text="getSelectedHomework().title"></span>
-                  <button @click="editHomeworkName()" class="text-xs text-indigo-600 dark:text-indigo-400 underline font-normal ml-1">修改名稱</button>
+                  <button @click="openEditHomeworkModal()" class="text-xs text-indigo-600 dark:text-indigo-400 underline font-normal ml-1">修改名稱與日期</button>
                 </h3>
 
                 <div class="flex flex-wrap items-center gap-2">
@@ -589,7 +589,7 @@
         </div>
       </div>
 
-      <!-- ==================== 4. 測驗成績分析 (含 Excel 鍵盤流打分與防呆) ==================== -->
+      <!-- ==================== 4. 測驗成績分析 ==================== -->
       <div x-show="currentTab === 'quiz'" class="space-y-6">
         <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-wrap justify-between items-center gap-3">
           <div class="flex flex-wrap items-center space-x-2">
@@ -599,11 +599,11 @@
                 <option :value="q.id" x-text="q.title"></option>
               </template>
             </select>
-            <button @click="editQuizPrompt()" class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 font-medium">✏️ 編輯</button>
+            <button @click="openEditQuizModal()" class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 font-medium">✏️ 編輯</button>
             <button @click="showReorderQuizModal = true" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs px-3 py-1.5 rounded-lg border border-indigo-200 font-bold">↕️ 調整次序</button>
             <button @click="deleteCurrentQuiz()" class="bg-slate-100 hover:bg-red-50 dark:bg-slate-700 text-red-600 text-xs px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 font-medium">🗑️ 刪除</button>
           </div>
-          <button @click="addQuizPrompt()" :style="`background-color: ${themeColor}`" class="text-white text-xs font-bold px-4 py-2 rounded-xl shadow transition">+ 新增測驗</button>
+          <button @click="openAddQuizModal()" :style="`background-color: ${themeColor}`" class="text-white text-xs font-bold px-4 py-2 rounded-xl shadow transition">+ 新增測驗</button>
         </div>
 
         <template x-if="getSelectedQuiz()">
@@ -661,7 +661,7 @@
               </div>
             </div>
 
-            <!-- 分數登記 (支援 Enter / ↓ / ↑ 鍵盤連續錄分 + 超過滿分防呆) -->
+            <!-- 分數登記 -->
             <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5">
               <div class="flex justify-between items-center mb-3">
                 <h3 class="font-bold text-md" x-text="`💯 ${getSelectedQuiz().title} 分數登記`"></h3>
@@ -726,7 +726,7 @@
         </template>
       </div>
 
-      <!-- ==================== 5. 課室座位表 (黑板在下方修正版 + 支援空位釘選) ==================== -->
+      <!-- ==================== 5. 課室座位表 ==================== -->
       <div x-show="currentTab === 'seating'" class="space-y-6">
         <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-4">
           <div class="flex flex-wrap justify-between items-center gap-3">
@@ -763,7 +763,7 @@
                     <span class="text-[10px] text-slate-400 font-mono" x-text="`R${r}-C${c}`"></span>
                   </div>
 
-                  <!-- 📌 釘選按鈕 (學生座位與空位皆支援) -->
+                  <!-- 📌 釘選按鈕 -->
                   <button @click.stop="togglePinSeat(r, c)" 
                           :title="isSeatPinned(r, c) ? (getSeatStudent(r, c) ? '已釘選此座位（固定位置）' : '已鎖定空位（隨機排位時保留空白）') : '點擊釘選固定此座位或鎖定空位'"
                           :class="isSeatPinned(r, c) ? 'bg-amber-500 text-white shadow scale-105' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 hover:text-amber-500'"
@@ -930,7 +930,9 @@
     </main>
   </div>
 
-  <!-- 彈窗 0A：新增/修改日程事項彈窗 (支援每週循環日程選項) -->
+  <!-- ==================== 所有自訂 Modal 彈窗區塊 ==================== -->
+
+  <!-- 彈窗 0A：新增/修改日程事項彈窗 -->
   <div x-show="showEventModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-md shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b pb-2 dark:border-slate-700">
@@ -963,7 +965,7 @@
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-500 mb-1">日期 (Date)</label>
+          <label class="block text-xs font-bold text-slate-500 mb-1">起始日期 (Date)</label>
           <input type="date" x-model="activeEvent.date" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-700 font-bold">
         </div>
 
@@ -972,7 +974,7 @@
           <div class="p-3 bg-slate-50 dark:bg-slate-700/40 rounded-xl space-y-2 border border-slate-200 dark:border-slate-600">
             <label class="flex items-center space-x-2 cursor-pointer">
               <input type="checkbox" x-model="activeEvent.isRecurring" class="w-4 h-4 rounded text-indigo-600">
-              <span class="text-xs font-bold text-indigo-700 dark:text-indigo-300">🔄 每週重複</span>
+              <span class="text-xs font-bold text-indigo-700 dark:text-indigo-300">🔄 每週重複建立 (循環課表)</span>
             </label>
 
             <div x-show="activeEvent.isRecurring" class="flex items-center space-x-2 pt-1 text-xs">
@@ -1021,6 +1023,66 @@
           <button @click="showEventModal = false" class="px-4 py-1.5 text-xs text-slate-500 font-bold">取消</button>
           <button @click="saveActiveEvent()" :style="`background-color: ${themeColor}`" class="px-5 py-2 text-xs text-white font-bold rounded-xl shadow">儲存修改</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✨ 彈窗 0F：全新自訂功課新增/修改 Modal (代替原生 prompt) -->
+  <div x-show="showHwModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-md shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b pb-2 dark:border-slate-700">
+        <h3 class="font-bold text-lg" x-text="isEditHwMode ? '✏️ 修改功課名稱' : '➕ 新增功課'"></h3>
+        <button @click="showHwModal = false" class="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+      </div>
+
+      <div class="space-y-3 text-sm">
+        <div>
+          <label class="block text-xs font-bold text-slate-500 mb-1">功課名稱 / 內容</label>
+          <input type="text" x-model="activeHw.title" placeholder="例如: 數學工作紙 (三)" class="w-full px-3 py-2 border rounded-xl dark:bg-slate-700 font-bold focus:ring-2 focus:ring-indigo-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-500 mb-1">截止 / 繳交日期 (Date)</label>
+          <input type="date" x-model="activeHw.date" class="w-full px-3 py-2 border rounded-xl dark:bg-slate-700 font-bold">
+        </div>
+      </div>
+
+      <div class="flex justify-end space-x-2 pt-2 border-t dark:border-slate-700">
+        <button @click="showHwModal = false" class="px-4 py-1.5 text-xs text-slate-500 font-bold">取消</button>
+        <button @click="saveHomeworkModal()" :style="`background-color: ${themeColor}`" class="px-5 py-2 text-xs text-white font-bold rounded-xl shadow">儲存修改</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✨ 彈窗 0G：全新自訂測驗新增/修改 Modal (代替原生 prompt) -->
+  <div x-show="showQuizModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-md shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b pb-2 dark:border-slate-700">
+        <h3 class="font-bold text-lg" x-text="isEditQuizMode ? '✏️ 修改測驗名稱' : '➕ 新增測驗'"></h3>
+        <button @click="showQuizModal = false" class="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+      </div>
+
+      <div class="space-y-3 text-sm">
+        <div>
+          <label class="block text-xs font-bold text-slate-500 mb-1">測驗名稱 / 項目</label>
+          <input type="text" x-model="activeQuiz.title" placeholder="例如: 單元二小測" class="w-full px-3 py-2 border rounded-xl dark:bg-slate-700 font-bold focus:ring-2 focus:ring-indigo-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">測驗滿分</label>
+            <input type="number" x-model.number="activeQuiz.maxScore" placeholder="100" class="w-full px-3 py-2 border rounded-xl dark:bg-slate-700 font-bold">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">測驗日期 (Date)</label>
+            <input type="date" x-model="activeQuiz.date" class="w-full px-3 py-2 border rounded-xl dark:bg-slate-700 font-bold">
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end space-x-2 pt-2 border-t dark:border-slate-700">
+        <button @click="showQuizModal = false" class="px-4 py-1.5 text-xs text-slate-500 font-bold">取消</button>
+        <button @click="saveQuizModal()" :style="`background-color: ${themeColor}`" class="px-5 py-2 text-xs text-white font-bold rounded-xl shadow">儲存修改</button>
       </div>
     </div>
   </div>
@@ -1277,7 +1339,7 @@
             </div>
 
             <div class="text-xs">
-              <span class="text-slate-400 font-medium">不相鄰：</span>
+              <span class="text-slate-400 font-medium">避開同桌同學（矛盾不相鄰）：</span>
               <div class="flex flex-wrap gap-1 mt-1">
                 <template x-for="other in currentStudents.filter(o => o.id !== s.id)" :key="other.id">
                   <button @click="toggleAvoidStudent(s, other.id)" 
@@ -1440,8 +1502,8 @@ const firebaseConfig = {
         currentTab: 'calendar',
         themeColor: '#4f46e5',
         cardStyle: 'solid',
-        isSidebarCollapsed: false, // 行事曆左側選單折疊狀態
-        syncState: 'synced',        // ☁️ 雲端同步燈號: 'synced' | 'syncing' | 'error'
+        isSidebarCollapsed: false,
+        syncState: 'synced',
 
         currentSemesterName: '2026-2027 第一學期',
         archives: [],
@@ -1474,8 +1536,18 @@ const firebaseConfig = {
 
         draggedHwIdx: null,
         draggedQuizIdx: null,
-        draggedCalendarItem: null, // 行事曆拖拽事項容器
+        draggedCalendarItem: null,
         calendarEvents: [],
+
+        // 自訂功課 Modal State
+        showHwModal: false,
+        isEditHwMode: false,
+        activeHw: { id: '', title: '', date: '', class: '' },
+
+        // 自訂測驗 Modal State
+        showQuizModal: false,
+        isEditQuizMode: false,
+        activeQuiz: { id: '', title: '', maxScore: 100, date: '', class: '' },
 
         showEventModal: false,
         isEditEventMode: false,
@@ -1564,7 +1636,6 @@ const firebaseConfig = {
           return item.startTime;
         },
 
-        // Excel 風格「鍵盤流」跳格輸入邏輯
         focusNextScoreInput(e) {
           const inputs = Array.from(document.querySelectorAll('.quiz-score-input'));
           const idx = inputs.indexOf(e.target);
@@ -1583,7 +1654,6 @@ const firebaseConfig = {
           }
         },
 
-        // 智慧防呆校驗（分數超過滿分或小於 0 時高亮警告）
         isScoreInvalid(quizId, studentId) {
           const score = this.getQuizScore(quizId, studentId);
           const q = this.getSelectedQuiz();
@@ -1599,7 +1669,6 @@ const firebaseConfig = {
         selectedHomeworkId: null,
         selectedQuizId: null,
 
-        // 座位表狀態
         seatingGridRows: 5,
         seatingGridCols: 6,
         seatingAssignments: {},
@@ -1886,7 +1955,6 @@ const firebaseConfig = {
           return items;
         },
 
-        // 行事曆卡片拖拽修改日期 (Drag & Drop)
         handleCalendarEventDragStart(event, item) {
           this.draggedCalendarItem = item;
           event.dataTransfer.effectAllowed = 'move';
@@ -1966,7 +2034,6 @@ const firebaseConfig = {
 
           let titleToSave = this.activeEvent.title.trim().replace(/^\[[^\]]+\]\s*/, '');
 
-          // 判斷是否為新增模式下的「每週循環課表」自動批量建立
           const repeatWeeksCount = (!this.isEditEventMode && this.activeEvent.isRecurring) ? Math.min(Math.max(this.activeEvent.repeatWeeks || 1, 1), 20) : 1;
           const baseDate = new Date(this.activeEvent.date);
 
@@ -2054,6 +2121,115 @@ const firebaseConfig = {
           }
 
           this.showEventModal = false;
+          this.saveDataToFirebase();
+        },
+
+        // ✨ 功課 Modal 邏輯處理
+        openAddHomeworkModal() {
+          this.isEditHwMode = false;
+          this.activeHw = {
+            id: 'h_' + Date.now(),
+            class: this.currentClass,
+            title: '',
+            date: this.getLocalToday(),
+            isAllDay: true,
+            startTime: '09:00',
+            endTime: '10:00'
+          };
+          this.showHwModal = true;
+        },
+
+        openEditHomeworkModal() {
+          const hw = this.getSelectedHomework();
+          if (!hw) return;
+          this.isEditHwMode = true;
+          this.activeHw = {
+            id: hw.id,
+            class: hw.class,
+            title: hw.title,
+            date: hw.date || this.getLocalToday(),
+            isAllDay: hw.isAllDay !== undefined ? hw.isAllDay : true,
+            startTime: hw.startTime || '09:00',
+            endTime: hw.endTime || '10:00'
+          };
+          this.showHwModal = true;
+        },
+
+        saveHomeworkModal() {
+          if (!this.activeHw.title.trim()) return alert('請輸入功課名稱');
+          
+          if (this.isEditHwMode) {
+            const hw = this.homeworks.find(h => h.id === this.activeHw.id);
+            if (hw) {
+              hw.title = this.activeHw.title.trim();
+              hw.date = this.activeHw.date;
+            }
+          } else {
+            this.homeworks.push({
+              ...this.activeHw,
+              title: this.activeHw.title.trim()
+            });
+            this.selectedHomeworkId = this.activeHw.id;
+          }
+
+          this.showHwModal = false;
+          this.saveDataToFirebase();
+        },
+
+        // ✨ 測驗 Modal 邏輯處理
+        openAddQuizModal() {
+          this.isEditQuizMode = false;
+          this.activeQuiz = {
+            id: 'q_' + Date.now(),
+            class: this.currentClass,
+            title: '',
+            maxScore: 100,
+            date: this.getLocalToday(),
+            isAllDay: true,
+            startTime: '09:00',
+            endTime: '10:00'
+          };
+          this.showQuizModal = true;
+        },
+
+        openEditQuizModal() {
+          const q = this.getSelectedQuiz();
+          if (!q) return;
+          this.isEditQuizMode = true;
+          this.activeQuiz = {
+            id: q.id,
+            class: q.class,
+            title: q.title,
+            maxScore: q.maxScore || 100,
+            date: q.date || this.getLocalToday(),
+            isAllDay: q.isAllDay !== undefined ? q.isAllDay : true,
+            startTime: q.startTime || '09:00',
+            endTime: q.endTime || '10:00'
+          };
+          this.showQuizModal = true;
+        },
+
+        saveQuizModal() {
+          if (!this.activeQuiz.title.trim()) return alert('請輸入測驗名稱');
+
+          if (this.isEditQuizMode) {
+            const q = this.quizzes.find(item => item.id === this.activeQuiz.id);
+            if (q) {
+              q.title = this.activeQuiz.title.trim();
+              q.maxScore = Number(this.activeQuiz.maxScore) || 100;
+              q.date = this.activeQuiz.date;
+            }
+          } else {
+            this.quizzes.push({
+              ...this.activeQuiz,
+              title: this.activeQuiz.title.trim(),
+              maxScore: Number(this.activeQuiz.maxScore) || 100
+            });
+            this.selectedQuizId = this.activeQuiz.id;
+          }
+
+          this.showQuizModal = false;
+          this.showQuizChart = false;
           this.saveDataToFirebase();
         },
 
@@ -2511,7 +2687,6 @@ const firebaseConfig = {
           const pinnedSlotsKeys = new Set();
           const fixedAssignment = {};
 
-          // 1. 收集學生釘選位置
           students.forEach(st => {
             const pos = currentClassAssignments[st.id];
             if (pos && pos.pinned && pos.r <= R && pos.c <= C) {
@@ -2520,7 +2695,6 @@ const firebaseConfig = {
             }
           });
 
-          // 2. 收集「空位釘選/鎖定空位」位置
           Object.keys(currentClassAssignments).forEach(key => {
             if (key.startsWith('empty_')) {
               const pos = currentClassAssignments[key];
@@ -2530,7 +2704,6 @@ const firebaseConfig = {
             }
           });
 
-          // 檢查剩餘可用座位數
           const unpinnedStudents = students.filter(st => !fixedAssignment[st.id]);
           let remainingSlots = [];
           for (let r = 1; r <= R; r++) {
@@ -2546,7 +2719,6 @@ const firebaseConfig = {
             return;
           }
 
-          // 黑板在最下方 (Row = R)，故前排 = 高行數 (靠近黑板)，後排 = 低行數 (遠離黑板)
           const frontRowThreshold = Math.max(R - 1, Math.ceil(R * 0.6));
           const backRowThreshold = Math.min(2, Math.floor(R * 0.4));
 
@@ -2557,7 +2729,6 @@ const firebaseConfig = {
             let shuffledSlots = [...remainingSlots].sort(() => Math.random() - 0.5);
             let currentAssignment = { ...fixedAssignment };
 
-            // 保留已釘選的空位
             Object.keys(currentClassAssignments).forEach(key => {
               if (key.startsWith('empty_') && currentClassAssignments[key].pinned) {
                 currentAssignment[key] = currentClassAssignments[key];
@@ -2922,26 +3093,6 @@ const firebaseConfig = {
           }
         },
 
-        addHomeworkPrompt() {
-          const title = prompt('請輸入功課名稱：');
-          if (title) {
-            const newHw = { id: 'h_' + Date.now(), class: this.currentClass, title, date: this.getLocalToday(), isAllDay: true, startTime: '09:00', endTime: '10:00' };
-            this.homeworks.push(newHw);
-            this.selectedHomeworkId = newHw.id;
-            this.saveDataToFirebase();
-          }
-        },
-
-        editHomeworkName() {
-          const hw = this.getSelectedHomework();
-          if (!hw) return;
-          const newTitle = prompt('請輸入新的功課名稱：', hw.title);
-          if (newTitle) {
-            hw.title = newTitle;
-            this.saveDataToFirebase();
-          }
-        },
-
         deleteCurrentHomework() {
           const hw = this.getSelectedHomework();
           if (!hw) return;
@@ -3019,27 +3170,6 @@ const firebaseConfig = {
             this.selectedQuizId = this.currentQuizzes[0].id;
           } else {
             this.selectedQuizId = null;
-          }
-        },
-
-        addQuizPrompt() {
-          const title = prompt('請輸入測驗名稱 (例如: 單元二小測)：');
-          if (title) {
-            const newQ = { id: 'q_' + Date.now(), class: this.currentClass, title, maxScore: 100, date: this.getLocalToday(), isAllDay: true, startTime: '09:00', endTime: '10:00' };
-            this.quizzes.push(newQ);
-            this.selectedQuizId = newQ.id;
-            this.showQuizChart = false;
-            this.saveDataToFirebase();
-          }
-        },
-
-        editQuizPrompt() {
-          const q = this.getSelectedQuiz();
-          if (!q) return;
-          const newTitle = prompt('請輸入新的測驗名稱：', q.title);
-          if (newTitle) {
-            q.title = newTitle;
-            this.saveDataToFirebase();
           }
         },
 
