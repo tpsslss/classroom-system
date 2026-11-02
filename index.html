@@ -46,8 +46,11 @@
       <div class="text-5xl mb-2">📚</div>
       <h2 class="text-2xl font-bold">課堂管理系統</h2>
       <p class="text-xs text-slate-500 dark:text-slate-400">請使用 Google 帳號登入，系統將會即時雲端同步您的數據。</p>
-      <button @click="loginGoogle()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-4 rounded-xl flex items-center justify-center space-x-2 shadow-lg transition">
-        <span>🔑 使用 Google 帳號登入</span>
+      <button @click="loginGoogle()" 
+              :disabled="isLoggingIn"
+              :class="isLoggingIn ? 'opacity-50 cursor-not-allowed' : 'hover:bg-indigo-700'"
+              class="w-full bg-indigo-600 text-white font-medium py-2.5 px-4 rounded-xl flex items-center justify-center space-x-2 shadow-lg transition">
+        <span x-text="isLoggingIn ? '⏳ 正在開啟登入視窗...' : '🔑 使用 Google 帳號登入'"></span>
       </button>
     </div>
   </div>
@@ -71,10 +74,10 @@
         <!-- 頁籤選單與頂部工具按鈕 -->
         <div class="flex flex-wrap items-center gap-2">
           <nav class="flex bg-black/20 p-1 rounded-lg text-sm font-medium">
-            <button @click="switchTab('calendar')" :class="currentTab === 'calendar' ? 'bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 shadow font-bold' : 'text-white hover:text-white/80'" class="px-3 py-1.5 rounded-md transition">📅 行事曆</button>
-            <button @click="switchTab('homework')" :class="currentTab === 'homework' ? 'bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 shadow font-bold' : 'text-white hover:text-white/80'" class="px-3 py-1.5 rounded-md transition">📋 功課管理</button>
-            <button @click="switchTab('overview')" :class="currentTab === 'overview' ? 'bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 shadow font-bold' : 'text-white hover:text-white/80'" class="px-3 py-1.5 rounded-md transition">📊 學生總覽</button>
-            <button @click="switchTab('quiz')" :class="currentTab === 'quiz' ? 'bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 shadow font-bold' : 'text-white hover:text-white/80'" class="px-3 py-1.5 rounded-md transition">📈 測驗成績</button>
+            <button @click="switchTab('calendar')" :class="currentTab === 'calendar' ? 'bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 shadow font-bold' : 'text-white hover:text-white/80'" class="px-3 py-1.5 rounded-md transition">📅 行事曆待辦</button>
+            <button @click="switchTab('homework')" :class="currentTab === 'homework' ? 'bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 shadow font-bold' : 'text-white hover:text-white/80'" class="px-3 py-1.5 rounded-md transition">📋 按功課管理</button>
+            <button @click="switchTab('overview')" :class="currentTab === 'overview' ? 'bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 shadow font-bold' : 'text-white hover:text-white/80'" class="px-3 py-1.5 rounded-md transition">📊 學生整體總覽</button>
+            <button @click="switchTab('quiz')" :class="currentTab === 'quiz' ? 'bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 shadow font-bold' : 'text-white hover:text-white/80'" class="px-3 py-1.5 rounded-md transition">📈 測驗成績分析</button>
             <button @click="switchTab('seating')" :class="currentTab === 'seating' ? 'bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 shadow font-bold' : 'text-white hover:text-white/80'" class="px-3 py-1.5 rounded-md transition">🪑 課室座位表</button>
             <button @click="switchTab('incidents')" :class="currentTab === 'incidents' ? 'bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 shadow font-bold' : 'text-white hover:text-white/80'" class="px-3 py-1.5 rounded-md transition">📝 課堂紀錄</button>
             <button @click="switchTab('settings')" :class="currentTab === 'settings' ? 'bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 shadow font-bold' : 'text-white hover:text-white/80'" class="px-3 py-1.5 rounded-md transition">⚙️ 設定與歸檔</button>
@@ -142,7 +145,14 @@
             <h2 class="text-xl font-black tracking-wide" x-text="`${calYear}年 ${calMonthNames[calMonth]}`"></h2>
           </div>
 
-          <div class="flex items-center space-x-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <!-- 側邊欄折疊/展開按鈕 -->
+            <button @click="isSidebarCollapsed = !isSidebarCollapsed" 
+                    class="px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded-xl text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center space-x-1"
+                    :title="isSidebarCollapsed ? '展開側邊欄選單' : '折疊側邊欄以放大行事曆'">
+              <span x-text="isSidebarCollapsed ? '▶ 展開選單' : '◀ 折疊選單'"></span>
+            </button>
+
             <div class="bg-slate-100 dark:bg-slate-700 p-1 rounded-xl flex items-center space-x-1 text-xs font-bold">
               <button @click="calViewMode = 'grid'" :class="calViewMode === 'grid' ? 'bg-white dark:bg-slate-800 shadow text-indigo-600 dark:text-indigo-400' : 'text-slate-500'" class="px-3 py-1 rounded-md transition">📅 網格視角</button>
               <button @click="calViewMode = 'list'" :class="calViewMode === 'list' ? 'bg-white dark:bg-slate-800 shadow text-indigo-600 dark:text-indigo-400' : 'text-slate-500'" class="px-3 py-1 rounded-md transition">📋 列表視角</button>
@@ -157,8 +167,13 @@
         <!-- 側邊欄與行事曆主體區塊 -->
         <div class="flex flex-col md:flex-row gap-5">
           
-          <!-- 左側：分類選單 -->
-          <div class="w-full md:w-60 shrink-0 space-y-4 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-700/60 pr-0 md:pr-4 pb-4 md:pb-0">
+          <!-- 左側：分類選單 (支援動態折疊) -->
+          <div x-show="!isSidebarCollapsed" 
+               x-transition:enter="transition ease-out duration-200"
+               x-transition:enter-start="opacity-0 -translate-x-4"
+               x-transition:enter-end="opacity-100 translate-x-0"
+               class="w-full md:w-60 shrink-0 space-y-4 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-700/60 pr-0 md:pr-4 pb-4 md:pb-0">
+            
             <button @click="openCreateEventModal(getLocalToday())" class="w-full py-2.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 rounded-xl text-xs font-bold flex items-center justify-center space-x-1 shadow-sm hover:bg-indigo-100 transition">
               <span>➕ 建立新日程事項</span>
             </button>
@@ -207,8 +222,8 @@
             </div>
           </div>
 
-          <!-- 右側：行事曆主體 (網格「今日」全新柔和主題色高亮) -->
-          <div class="flex-1">
+          <!-- 右側：行事曆主體 (加入 min-w-0 防止被擠壓) -->
+          <div class="flex-1 min-w-0">
             
             <!-- 1. 網格視角 (Grid View) -->
             <div x-show="calViewMode === 'grid'" class="space-y-1">
@@ -250,7 +265,7 @@
                     <div class="space-y-1.5 overflow-y-auto max-h-[105px] no-scrollbar flex-1">
                       <template x-for="item in day.items" :key="item.id">
                         <div @click.stop="openEditEventModal(item)" 
-                             class="text-[11px] px-2 py-1 rounded-lg font-bold shadow-xs hover:scale-102 transition flex items-center space-x-1 cursor-pointer"
+                             class="text-[11px] px-2 py-1 rounded-lg font-bold shadow-xs hover:scale-102 transition flex items-center space-x-1 cursor-pointer overflow-hidden"
                              :style="getEventCardStyle(item)"
                              :title="item.title">
                           
@@ -678,13 +693,13 @@
         </template>
       </div>
 
-      <!-- ==================== 5. 課室座位表 (固定黑板在下方簡潔版) ==================== -->
+      <!-- ==================== 5. 課室座位表 (黑板在下方修正版 + 支援空位釘選) ==================== -->
       <div x-show="currentTab === 'seating'" class="space-y-6">
         <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-4">
           <div class="flex flex-wrap justify-between items-center gap-3">
             <div>
               <h2 class="text-lg font-bold" x-text="`🪑 ${currentClass} 班課室座位表`"></h2>
-              <p class="text-xs text-slate-400 font-medium">💡 提示：按住座位卡片可拖動換位；點擊 📌 可釘選固定位置。</p>
+              <p class="text-xs text-slate-400 font-medium">💡 提示：按住座位卡片可拖動換位；點擊 📌 可釘選固定位置或鎖定保留空位。</p>
             </div>
             
             <div class="flex flex-wrap items-center gap-2">
@@ -703,7 +718,8 @@
               <template x-for="c in getDisplayCols()" :key="'c-'+c">
                 <div class="p-2.5 bg-white dark:bg-slate-800 border rounded-2xl flex flex-col justify-between items-center h-24 shadow-sm relative transition-all duration-150"
                      :class="[
-                       getSeatStudent(r, c) ? (isSeatPinned(r, c) ? 'border-amber-400 dark:border-amber-500 ring-2 ring-amber-400/30' : 'border-slate-200 dark:border-slate-700') + ' cursor-grab active:cursor-grabbing hover:border-indigo-500 hover:shadow-md' : 'border-dashed border-slate-300 dark:border-slate-700/60 hover:border-indigo-400'
+                       isSeatPinned(r, c) ? 'border-amber-400 dark:border-amber-500 ring-2 ring-amber-400/30' : 'border-slate-200 dark:border-slate-700',
+                       getSeatStudent(r, c) ? 'cursor-grab active:cursor-grabbing hover:border-indigo-500 hover:shadow-md' : 'border-dashed border-slate-300 dark:border-slate-700/60 hover:border-amber-400'
                      ]"
                      :draggable="getSeatStudent(r, c) ? 'true' : 'false'"
                      @dragstart="handleSeatDragStart($event, r, c)"
@@ -714,14 +730,13 @@
                     <span class="text-[10px] text-slate-400 font-mono" x-text="`R${r}-C${c}`"></span>
                   </div>
 
-                  <template x-if="getSeatStudent(r, c)">
-                    <button @click.stop="togglePinSeat(r, c)" 
-                            :title="isSeatPinned(r, c) ? '已釘選此座位（智慧排位時固定不動）' : '點擊釘選固定此座位'"
-                            :class="isSeatPinned(r, c) ? 'bg-amber-500 text-white shadow scale-105' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 hover:text-amber-500'"
-                            class="absolute top-1.5 right-1.5 text-[10px] px-1.5 py-0.5 rounded-md transition border border-slate-200 dark:border-slate-600 font-bold z-10">
-                      📌
-                    </button>
-                  </template>
+                  <!-- 📌 釘選按鈕 (學生座位與空位皆支援) -->
+                  <button @click.stop="togglePinSeat(r, c)" 
+                          :title="isSeatPinned(r, c) ? (getSeatStudent(r, c) ? '已釘選此座位（固定位置）' : '已鎖定空位（隨機排位時保留空白）') : '點擊釘選固定此座位或鎖定空位'"
+                          :class="isSeatPinned(r, c) ? 'bg-amber-500 text-white shadow scale-105' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 hover:text-amber-500'"
+                          class="absolute top-1.5 right-1.5 text-[10px] px-1.5 py-0.5 rounded-md transition border border-slate-200 dark:border-slate-600 font-bold z-10">
+                    📌
+                  </button>
 
                   <template x-if="getSeatStudent(r, c)">
                     <div class="text-center w-full pointer-events-none">
@@ -738,7 +753,14 @@
                   </template>
 
                   <template x-if="!getSeatStudent(r, c)">
-                    <span class="text-xs text-slate-300 dark:text-slate-600 font-medium pointer-events-none">空位</span>
+                    <div class="text-center pointer-events-none">
+                      <template x-if="isSeatPinned(r, c)">
+                        <span class="text-xs text-amber-600 dark:text-amber-400 font-bold block">🚫 鎖定空位</span>
+                      </template>
+                      <template x-if="!isSeatPinned(r, c)">
+                        <span class="text-xs text-slate-300 dark:text-slate-600 font-medium block">空位</span>
+                      </template>
+                    </div>
                   </template>
                 </div>
               </template>
@@ -1196,11 +1218,11 @@
                 </label>
                 <label class="flex items-center space-x-1 cursor-pointer">
                   <input type="checkbox" x-model="s.frontRow" class="rounded text-indigo-600">
-                  <span>前排優先</span>
+                  <span>前排優先(近黑板)</span>
                 </label>
                 <label class="flex items-center space-x-1 cursor-pointer">
                   <input type="checkbox" x-model="s.backRow" class="rounded text-indigo-600">
-                  <span>後排優先</span>
+                  <span>後排優先(遠黑板)</span>
                 </label>
               </div>
             </div>
@@ -1364,10 +1386,12 @@ const firebaseConfig = {
     function app() {
       return {
         user: null,
+        isLoggingIn: false,
         isDarkMode: false,
         currentTab: 'calendar',
         themeColor: '#4f46e5',
         cardStyle: 'solid',
+        isSidebarCollapsed: false, // 行事曆左側選單折疊狀態
 
         currentSemesterName: '2026-2027 第一學期',
         archives: [],
@@ -1603,12 +1627,23 @@ const firebaseConfig = {
           this.currentTab = tab;
         },
 
-        loginGoogle() {
-          const provider = new firebase.auth.GoogleAuthProvider();
-          provider.setCustomParameters({
-            prompt: 'select_account'
-          });
-          auth.signInWithPopup(provider).catch(e => alert("登入失敗: " + e.message));
+        async loginGoogle() {
+          if (this.isLoggingIn) return;
+          this.isLoggingIn = true;
+          try {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            provider.setCustomParameters({
+              prompt: 'select_account'
+            });
+            await auth.signInWithPopup(provider);
+          } catch (e) {
+            // 過濾掉使用者主動關閉彈窗與重複點擊的無害錯誤代碼
+            if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
+              alert("登入失敗: " + e.message);
+            }
+          } finally {
+            this.isLoggingIn = false;
+          }
         },
 
         logoutGoogle() {
@@ -2336,17 +2371,14 @@ const firebaseConfig = {
 
         smartRandomizeSeats() {
           const students = this.currentStudents;
-          const R = this.seatingGridRows;
-          const C = this.seatingGridCols;
-          if (students.length > R * C) {
-            alert(`全班人數 (${students.length}) 超過座位容量 (${R * C})，請先增加行或列數！`);
-            return;
-          }
+          const R = Number(this.seatingGridRows) || 5;
+          const C = Number(this.seatingGridCols) || 6;
 
           const currentClassAssignments = (this.seatingAssignments && this.seatingAssignments[this.currentClass]) || {};
           const pinnedSlotsKeys = new Set();
           const fixedAssignment = {};
 
+          // 1. 收集學生釘選位置
           students.forEach(st => {
             const pos = currentClassAssignments[st.id];
             if (pos && pos.pinned && pos.r <= R && pos.c <= C) {
@@ -2355,6 +2387,17 @@ const firebaseConfig = {
             }
           });
 
+          // 2. 收集「空位釘選/鎖定空位」位置
+          Object.keys(currentClassAssignments).forEach(key => {
+            if (key.startsWith('empty_')) {
+              const pos = currentClassAssignments[key];
+              if (pos && pos.pinned && pos.r <= R && pos.c <= C) {
+                pinnedSlotsKeys.add(`${pos.r}_${pos.c}`);
+              }
+            }
+          });
+
+          // 檢查剩餘可用座位數
           const unpinnedStudents = students.filter(st => !fixedAssignment[st.id]);
           let remainingSlots = [];
           for (let r = 1; r <= R; r++) {
@@ -2365,12 +2408,29 @@ const firebaseConfig = {
             }
           }
 
+          if (unpinnedStudents.length > remainingSlots.length) {
+            alert(`可用的空座位數 (${remainingSlots.length}) 不足以安排剩下的 ${unpinnedStudents.length} 位學生！請適當取消部分「鎖定空位」或擴大班房規模。`);
+            return;
+          }
+
+          // 黑板在最下方 (Row = R)，故前排 = 高行數 (靠近黑板)，後排 = 低行數 (遠離黑板)
+          const frontRowThreshold = Math.max(R - 1, Math.ceil(R * 0.6)); // 前排邊界 (例: R=5 時為 R4, R5)
+          const backRowThreshold = Math.min(2, Math.floor(R * 0.4));     // 後排邊界 (例: R=5 時為 R1, R2)
+
           let bestAssignment = null;
           let foundValid = false;
 
           for (let attempt = 0; attempt < 2000; attempt++) {
             let shuffledSlots = [...remainingSlots].sort(() => Math.random() - 0.5);
             let currentAssignment = { ...fixedAssignment };
+
+            // 保留已釘選的空位
+            Object.keys(currentClassAssignments).forEach(key => {
+              if (key.startsWith('empty_') && currentClassAssignments[key].pinned) {
+                currentAssignment[key] = currentClassAssignments[key];
+              }
+            });
+
             let gridMatrix = {};
             
             Object.keys(fixedAssignment).forEach(sId => {
@@ -2384,9 +2444,10 @@ const firebaseConfig = {
               const st = unpinnedStudents[i];
               const slot = shuffledSlots[i];
 
-              if (st.isTall && slot.r <= 2) { valid = false; break; }
-              if (st.frontRow && slot.r > 2) { valid = false; break; }
-              if (st.backRow && slot.r < (R - 1)) { valid = false; break; }
+              // 條件判斷 (黑板在最下方：slot.r 越大越靠近黑板)
+              if (st.isTall && slot.r >= frontRowThreshold) { valid = false; break; }  // 高個子避開前排 (靠近黑板處)
+              if (st.frontRow && slot.r < frontRowThreshold) { valid = false; break; } // 前排優先 (必須在靠近黑板區域)
+              if (st.backRow && slot.r > backRowThreshold) { valid = false; break; }   // 後排優先 (必須在遠離黑板區域)
 
               currentAssignment[st.id] = { r: slot.r, c: slot.c, pinned: false };
               gridMatrix[`${slot.r}_${slot.c}`] = st.id;
@@ -2427,7 +2488,7 @@ const firebaseConfig = {
             if (!this.seatingAssignments) this.seatingAssignments = {};
             this.seatingAssignments[this.currentClass] = bestAssignment;
             this.saveDataToFirebase();
-            alert('✨ 智慧排位成功！已保留釘選固定座位並完全滿足其餘限制條件。');
+            alert('✨ 智慧排位成功！已保留釘選學生與鎖定空位，並完全滿足前/後排與避開條件。');
           } else {
             alert('⚠️ 嘗試 2000 次後未能完全滿足所有嚴格限制，建議適當取消部分釘選或放寬條件！');
           }
@@ -2437,32 +2498,46 @@ const firebaseConfig = {
           const classAssignments = (this.seatingAssignments && this.seatingAssignments[this.currentClass]) || {};
           const studentId = Object.keys(classAssignments).find(sId => {
             const pos = classAssignments[sId];
-            return pos && pos.r === r && pos.c === c;
+            return pos && pos.r === r && pos.c === c && !sId.startsWith('empty_');
           });
           return this.students.find(s => s.id === studentId);
         },
 
         togglePinSeat(r, c) {
-          const st = this.getSeatStudent(r, c);
-          if (!st) return;
           if (!this.seatingAssignments) this.seatingAssignments = {};
           if (!this.seatingAssignments[this.currentClass]) this.seatingAssignments[this.currentClass] = {};
           
-          const pos = this.seatingAssignments[this.currentClass][st.id] || { r, c };
-          const currentPinned = !!pos.pinned;
-          this.seatingAssignments[this.currentClass][st.id] = {
-            r: pos.r || r,
-            c: pos.c || c,
-            pinned: !currentPinned
-          };
+          const st = this.getSeatStudent(r, c);
+          if (st) {
+            const pos = this.seatingAssignments[this.currentClass][st.id] || { r, c };
+            this.seatingAssignments[this.currentClass][st.id] = {
+              r: pos.r || r,
+              c: pos.c || c,
+              pinned: !pos.pinned
+            };
+          } else {
+            // 切換「空位釘選」狀態
+            const emptyKey = `empty_${r}_${c}`;
+            const emptyPos = this.seatingAssignments[this.currentClass][emptyKey];
+            if (emptyPos && emptyPos.pinned) {
+              delete this.seatingAssignments[this.currentClass][emptyKey];
+            } else {
+              this.seatingAssignments[this.currentClass][emptyKey] = { r, c, pinned: true, isEmpty: true };
+            }
+          }
           this.saveDataToFirebase();
         },
 
         isSeatPinned(r, c) {
+          const classAssignments = (this.seatingAssignments && this.seatingAssignments[this.currentClass]) || {};
           const st = this.getSeatStudent(r, c);
-          if (!st) return false;
-          const pos = (this.seatingAssignments && this.seatingAssignments[this.currentClass] && this.seatingAssignments[this.currentClass][st.id]);
-          return pos ? !!pos.pinned : false;
+          if (st) {
+            const pos = classAssignments[st.id];
+            return pos ? !!pos.pinned : false;
+          }
+          const emptyKey = `empty_${r}_${c}`;
+          const emptyPos = classAssignments[emptyKey];
+          return emptyPos ? !!emptyPos.pinned : false;
         },
 
         handleSeatDragStart(event, r, c) {
@@ -2487,6 +2562,10 @@ const firebaseConfig = {
 
           if (!this.seatingAssignments) this.seatingAssignments = {};
           if (!this.seatingAssignments[this.currentClass]) this.seatingAssignments[this.currentClass] = {};
+
+          // 如果學生被拖拽到一個「被鎖定的空位」，取消該空位的鎖定狀態
+          const targetEmptyKey = `empty_${targetR}_${targetC}`;
+          delete this.seatingAssignments[this.currentClass][targetEmptyKey];
 
           const targetStudent = this.getSeatStudent(targetR, targetC);
           const sourcePos = this.seatingAssignments[this.currentClass][sourceStudentId] || {};
@@ -2524,7 +2603,8 @@ const firebaseConfig = {
             let rowData = {};
             for (let c of colsList) {
               const st = this.getSeatStudent(r, c);
-              rowData[`第 ${c} 列`] = st ? `${st.no ? st.no + ' ' : ''}${st.name}` : '(空位)';
+              const pinnedEmpty = this.isSeatPinned(r, c) && !st;
+              rowData[`第 ${c} 列`] = st ? `${st.no ? st.no + ' ' : ''}${st.name}` : (pinnedEmpty ? '(鎖定空位)' : '(空位)');
             }
             rows.push(rowData);
           }
@@ -2544,7 +2624,10 @@ const firebaseConfig = {
             tableRowsHtml += '<tr>';
             for (let c of colsList) {
               const st = this.getSeatStudent(r, c);
-              const studentText = st ? `<b>#${st.no || '-'}</b><br><span style="font-size: 14pt;">${st.name}</span>` : '<span style="color:#aaa;">空位</span>';
+              const pinnedEmpty = this.isSeatPinned(r, c) && !st;
+              const studentText = st 
+                ? `<b>#${st.no || '-'}</b><br><span style="font-size: 14pt;">${st.name}</span>` 
+                : (pinnedEmpty ? '<span style="color:#d97706; font-weight:bold;">🚫 鎖定空位</span>' : '<span style="color:#aaa;">空位</span>');
               tableRowsHtml += `<td style="border:1px solid #999; text-align:center; vertical-align:middle; height:60px; padding:8px;">${studentText}</td>`;
             }
             tableRowsHtml += '</tr>';
