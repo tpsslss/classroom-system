@@ -73,6 +73,19 @@
 
         <!-- 頁籤選單與頂部工具按鈕 -->
         <div class="flex flex-wrap items-center gap-2">
+          <!-- ☁️ 雲端同步狀態指示燈 -->
+          <div class="flex items-center space-x-1.5 bg-black/20 px-2.5 py-1.5 rounded-xl border border-white/20 shrink-0 text-xs font-bold text-white">
+            <template x-if="syncState === 'synced'">
+              <span class="text-emerald-300 flex items-center gap-1" title="所有修改已即時同步至雲端">☁️ 已同步</span>
+            </template>
+            <template x-if="syncState === 'syncing'">
+              <span class="text-amber-300 flex items-center gap-1 animate-pulse" title="正在將資料寫入雲端...">⏳ 正在同步...</span>
+            </template>
+            <template x-if="syncState === 'error'">
+              <span class="text-rose-300 flex items-center gap-1" title="同步失敗，請檢查網路連線">⚠️ 同步失敗</span>
+            </template>
+          </div>
+
           <nav class="flex bg-black/20 p-1 rounded-lg text-sm font-medium">
             <button @click="switchTab('calendar')" :class="currentTab === 'calendar' ? 'bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 shadow font-bold' : 'text-white hover:text-white/80'" class="px-3 py-1.5 rounded-md transition">📅 行事曆待辦</button>
             <button @click="switchTab('homework')" :class="currentTab === 'homework' ? 'bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 shadow font-bold' : 'text-white hover:text-white/80'" class="px-3 py-1.5 rounded-md transition">📋 按功課管理</button>
@@ -218,14 +231,14 @@
 
             <div class="p-3 bg-indigo-50/50 dark:bg-slate-700/20 rounded-xl border border-indigo-100 dark:border-slate-700 text-xs space-y-1">
               <p class="font-bold text-indigo-700 dark:text-indigo-300">💡 提示：</p>
-              <p class="text-slate-500 dark:text-slate-400">點擊網格中的日期即可建立日程；點擊已有卡片可隨時修改時間、日期、內容或刪除。</p>
+              <p class="text-slate-500 dark:text-slate-400">點擊網格中的日期即可建立日程；按住卡片可直接拖拽至其他日期變更日程。</p>
             </div>
           </div>
 
-          <!-- 右側：行事曆主體 (加入 min-w-0 防止被擠壓) -->
+          <!-- 右側：行事曆主體 (加入 min-w-0 與拖拽放下處理) -->
           <div class="flex-1 min-w-0">
             
-            <!-- 1. 網格視角 (Grid View) -->
+            <!-- 1. 網格視角 (Grid View - 支援 Drag & Drop 日期變更) -->
             <div x-show="calViewMode === 'grid'" class="space-y-1">
               <div class="grid grid-cols-7 gap-1 text-center text-xs font-bold text-slate-400 pb-1">
                 <div class="text-rose-500">日</div>
@@ -240,6 +253,8 @@
               <div class="grid grid-cols-7 gap-1.5 bg-slate-200 dark:bg-slate-700 p-1.5 rounded-2xl overflow-hidden">
                 <template x-for="(day, idx) in getCalendarDays()" :key="idx">
                   <div @click="openCreateEventModal(day.dateStr)" 
+                       @dragover.prevent=""
+                       @drop="handleCalendarEventDrop($event, day.dateStr)"
                        class="min-h-[140px] p-2 flex flex-col justify-between group hover:bg-indigo-50/40 dark:hover:bg-slate-700/50 transition cursor-pointer relative rounded-xl border"
                        :style="day.isToday ? `background-color: ${themeColor}1e; border: 2px solid ${themeColor};` : ''"
                        :class="[
@@ -261,13 +276,15 @@
                       <span class="text-xs text-indigo-500 opacity-0 group-hover:opacity-100 font-bold">+</span>
                     </div>
 
-                    <!-- 當日事件卡片清單 -->
+                    <!-- 當日事件卡片清單 (支援按住拖拽 Drag & Drop) -->
                     <div class="space-y-1.5 overflow-y-auto max-h-[105px] no-scrollbar flex-1">
                       <template x-for="item in day.items" :key="item.id">
                         <div @click.stop="openEditEventModal(item)" 
-                             class="text-[11px] px-2 py-1 rounded-lg font-bold shadow-xs hover:scale-102 transition flex items-center space-x-1 cursor-pointer overflow-hidden"
+                             draggable="true"
+                             @dragstart="handleCalendarEventDragStart($event, item)"
+                             class="text-[11px] px-2 py-1 rounded-lg font-bold shadow-xs hover:scale-102 transition flex items-center space-x-1 cursor-grab active:cursor-grabbing overflow-hidden"
                              :style="getEventCardStyle(item)"
-                             :title="item.title">
+                             :title="`${item.title} (按住可拖拽修改日期)`">
                           
                           <template x-if="getItemTimeText(item)">
                             <span class="bg-black/20 dark:bg-white/20 text-[9px] px-1 py-0.2 rounded font-mono shrink-0" x-text="getItemTimeText(item)"></span>
@@ -572,7 +589,7 @@
         </div>
       </div>
 
-      <!-- ==================== 4. 測驗成績分析 ==================== -->
+      <!-- ==================== 4. 測驗成績分析 (含 Excel 鍵盤流打分與防呆) ==================== -->
       <div x-show="currentTab === 'quiz'" class="space-y-6">
         <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-wrap justify-between items-center gap-3">
           <div class="flex flex-wrap items-center space-x-2">
@@ -596,7 +613,7 @@
                 <div class="flex items-center space-x-3">
                   <h2 class="text-lg font-bold" x-text="`${getSelectedQuiz().title} 成績分析`"></h2>
                   <div class="flex items-center space-x-1 text-xs">
-                    <span class="text-slate-500">滿分：</span>
+                    <span class="text-slate-500 font-bold">滿分：</span>
                     <input type="number" :value="getSelectedQuiz().maxScore" @wheel="$event.target.blur()" @change="updateQuizMaxScore($event.target.value)" class="w-16 px-2 py-0.5 border rounded-lg text-xs dark:bg-slate-700 font-bold">
                   </div>
                 </div>
@@ -644,8 +661,12 @@
               </div>
             </div>
 
+            <!-- 分數登記 (支援 Enter / ↓ / ↑ 鍵盤連續錄分 + 超過滿分防呆) -->
             <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5">
-              <h3 class="font-bold text-md mb-3" x-text="`💯 ${getSelectedQuiz().title} 分數登記`"></h3>
+              <div class="flex justify-between items-center mb-3">
+                <h3 class="font-bold text-md" x-text="`💯 ${getSelectedQuiz().title} 分數登記`"></h3>
+                <span class="text-xs text-slate-400">⌨️ 快捷打分模式：使用 <kbd class="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-700 rounded font-mono font-bold">Enter</kbd> 或 <kbd class="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-700 rounded font-mono font-bold">↓</kbd> / <kbd class="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-700 rounded font-mono font-bold">↑</kbd> 鍵可快速跳到下一位/上一位</span>
+              </div>
               
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-2">
@@ -660,9 +681,15 @@
                                :value="getQuizScore(selectedQuizId, student.id)"
                                @wheel="$event.target.blur()"
                                @change="setQuizScore(selectedQuizId, student.id, $event.target.value)"
+                               @keydown.enter.prevent="focusNextScoreInput($event)"
+                               @keydown.arrow-down.prevent="focusNextScoreInput($event)"
+                               @keydown.arrow-up.prevent="focusPrevScoreInput($event)"
                                placeholder="得分" 
-                               class="w-20 px-2 py-1 border rounded-lg text-sm dark:bg-slate-700 dark:border-slate-600 font-bold">
-                        <span class="text-xs text-slate-400 font-mono w-10 text-right" x-text="getQuizScorePct(selectedQuizId, student.id)"></span>
+                               :class="isScoreInvalid(selectedQuizId, student.id) ? 'border-rose-500 bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-200 font-black ring-2 ring-rose-400' : 'border-slate-300 dark:border-slate-600 dark:bg-slate-700'"
+                               class="quiz-score-input w-20 px-2 py-1 border rounded-lg text-sm font-bold transition">
+                        <span class="text-xs font-mono w-10 text-right" 
+                              :class="isScoreInvalid(selectedQuizId, student.id) ? 'text-rose-500 font-bold' : 'text-slate-400'"
+                              x-text="isScoreInvalid(selectedQuizId, student.id) ? '超過滿分' : getQuizScorePct(selectedQuizId, student.id)"></span>
                       </div>
                     </div>
                   </template>
@@ -680,9 +707,15 @@
                                :value="getQuizScore(selectedQuizId, student.id)"
                                @wheel="$event.target.blur()"
                                @change="setQuizScore(selectedQuizId, student.id, $event.target.value)"
+                               @keydown.enter.prevent="focusNextScoreInput($event)"
+                               @keydown.arrow-down.prevent="focusNextScoreInput($event)"
+                               @keydown.arrow-up.prevent="focusPrevScoreInput($event)"
                                placeholder="得分" 
-                               class="w-20 px-2 py-1 border rounded-lg text-sm dark:bg-slate-700 dark:border-slate-600 font-bold">
-                        <span class="text-xs text-slate-400 font-mono w-10 text-right" x-text="getQuizScorePct(selectedQuizId, student.id)"></span>
+                               :class="isScoreInvalid(selectedQuizId, student.id) ? 'border-rose-500 bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-200 font-black ring-2 ring-rose-400' : 'border-slate-300 dark:border-slate-600 dark:bg-slate-700'"
+                               class="quiz-score-input w-20 px-2 py-1 border rounded-lg text-sm font-bold transition">
+                        <span class="text-xs font-mono w-10 text-right" 
+                              :class="isScoreInvalid(selectedQuizId, student.id) ? 'text-rose-500 font-bold' : 'text-slate-400'"
+                              x-text="isScoreInvalid(selectedQuizId, student.id) ? '超過滿分' : getQuizScorePct(selectedQuizId, student.id)"></span>
                       </div>
                     </div>
                   </template>
@@ -897,7 +930,7 @@
     </main>
   </div>
 
-  <!-- 彈窗 0A：新增/修改日程事項彈窗 -->
+  <!-- 彈窗 0A：新增/修改日程事項彈窗 (支援每週循環日程選項) -->
   <div x-show="showEventModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-md shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b pb-2 dark:border-slate-700">
@@ -930,9 +963,25 @@
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-500 mb-1">日期 (Date)</label>
+          <label class="block text-xs font-bold text-slate-500 mb-1">起始日期 (Date)</label>
           <input type="date" x-model="activeEvent.date" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-700 font-bold">
         </div>
+
+        <!-- 每週重複/循環課表選項 (僅新增模式) -->
+        <template x-if="!isEditEventMode">
+          <div class="p-3 bg-slate-50 dark:bg-slate-700/40 rounded-xl space-y-2 border border-slate-200 dark:border-slate-600">
+            <label class="flex items-center space-x-2 cursor-pointer">
+              <input type="checkbox" x-model="activeEvent.isRecurring" class="w-4 h-4 rounded text-indigo-600">
+              <span class="text-xs font-bold text-indigo-700 dark:text-indigo-300">🔄 每週重複建立 (循環課表)</span>
+            </label>
+
+            <div x-show="activeEvent.isRecurring" class="flex items-center space-x-2 pt-1 text-xs">
+              <span class="text-slate-500 font-bold">重複週數：</span>
+              <input type="number" x-model.number="activeEvent.repeatWeeks" min="2" max="20" class="w-20 px-2.5 py-1 border rounded-lg dark:bg-slate-700 font-bold">
+              <span class="text-slate-400">週 (每 7 天自動建立 1 次)</span>
+            </div>
+          </div>
+        </template>
 
         <div class="p-3 bg-slate-50 dark:bg-slate-700/40 rounded-xl space-y-2 border border-slate-200 dark:border-slate-600">
           <label class="flex items-center space-x-2 cursor-pointer">
@@ -1392,6 +1441,7 @@ const firebaseConfig = {
         themeColor: '#4f46e5',
         cardStyle: 'solid',
         isSidebarCollapsed: false, // 行事曆左側選單折疊狀態
+        syncState: 'synced',        // ☁️ 雲端同步燈號: 'synced' | 'syncing' | 'error'
 
         currentSemesterName: '2026-2027 第一學期',
         archives: [],
@@ -1424,6 +1474,7 @@ const firebaseConfig = {
 
         draggedHwIdx: null,
         draggedQuizIdx: null,
+        draggedCalendarItem: null, // 行事曆拖拽事項容器
         calendarEvents: [],
 
         showEventModal: false,
@@ -1436,7 +1487,9 @@ const firebaseConfig = {
           targetClass: '3A',
           isAllDay: true,
           startTime: '09:00',
-          endTime: '10:00'
+          endTime: '10:00',
+          isRecurring: false,
+          repeatWeeks: 4
         },
 
         showTimePickerModal: false,
@@ -1509,6 +1562,34 @@ const firebaseConfig = {
             return `${item.startTime}-${item.endTime}`;
           }
           return item.startTime;
+        },
+
+        // Excel 風格「鍵盤流」跳格輸入邏輯
+        focusNextScoreInput(e) {
+          const inputs = Array.from(document.querySelectorAll('.quiz-score-input'));
+          const idx = inputs.indexOf(e.target);
+          if (idx !== -1 && idx < inputs.length - 1) {
+            inputs[idx + 1].focus();
+            inputs[idx + 1].select();
+          }
+        },
+
+        focusPrevScoreInput(e) {
+          const inputs = Array.from(document.querySelectorAll('.quiz-score-input'));
+          const idx = inputs.indexOf(e.target);
+          if (idx > 0) {
+            inputs[idx - 1].focus();
+            inputs[idx - 1].select();
+          }
+        },
+
+        // 智慧防呆校驗（分數超過滿分或小於 0 時高亮警告）
+        isScoreInvalid(quizId, studentId) {
+          const score = this.getQuizScore(quizId, studentId);
+          const q = this.getSelectedQuiz();
+          if (score === '' || score === undefined || score === null || !q) return false;
+          const num = Number(score);
+          return num < 0 || num > q.maxScore;
         },
 
         todos: [],
@@ -1632,12 +1713,9 @@ const firebaseConfig = {
           this.isLoggingIn = true;
           try {
             const provider = new firebase.auth.GoogleAuthProvider();
-            provider.setCustomParameters({
-              prompt: 'select_account'
-            });
+            provider.setCustomParameters({ prompt: 'select_account' });
             await auth.signInWithPopup(provider);
           } catch (e) {
-            // 過濾掉使用者主動關閉彈窗與重複點擊的無害錯誤代碼
             if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
               alert("登入失敗: " + e.message);
             }
@@ -1808,6 +1886,43 @@ const firebaseConfig = {
           return items;
         },
 
+        // 行事曆卡片拖拽修改日期 (Drag & Drop)
+        handleCalendarEventDragStart(event, item) {
+          this.draggedCalendarItem = item;
+          event.dataTransfer.effectAllowed = 'move';
+        },
+
+        handleCalendarEventDrop(event, targetDateStr) {
+          event.preventDefault();
+          if (!this.draggedCalendarItem) return;
+
+          const item = this.draggedCalendarItem;
+          if (item.date === targetDateStr) {
+            this.draggedCalendarItem = null;
+            return;
+          }
+
+          const src = item.source;
+          const id = item.id;
+
+          if (src === 'calendarEvents') {
+            const ev = this.calendarEvents.find(e => e.id === id);
+            if (ev) ev.date = targetDateStr;
+          } else if (src === 'homeworks') {
+            const hw = this.homeworks.find(h => h.id === id);
+            if (hw) hw.date = targetDateStr;
+          } else if (src === 'quizzes') {
+            const q = this.quizzes.find(qz => qz.id === id);
+            if (q) q.date = targetDateStr;
+          } else if (src === 'incidents') {
+            const inc = this.incidents.find(i => i.id === id);
+            if (inc) inc.date = targetDateStr;
+          }
+
+          this.draggedCalendarItem = null;
+          this.saveDataToFirebase();
+        },
+
         openCreateEventModal(dateStr) {
           this.isEditEventMode = false;
           this.activeEvent = {
@@ -1818,7 +1933,9 @@ const firebaseConfig = {
             targetClass: this.currentClass,
             isAllDay: true,
             startTime: '09:00',
-            endTime: '10:00'
+            endTime: '10:00',
+            isRecurring: false,
+            repeatWeeks: 4
           };
           this.showEventModal = true;
         },
@@ -1836,7 +1953,9 @@ const firebaseConfig = {
             targetClass: this.currentClass,
             isAllDay: item.isAllDay !== undefined ? item.isAllDay : true,
             startTime: item.startTime || '09:00',
-            endTime: item.endTime || '10:00'
+            endTime: item.endTime || '10:00',
+            isRecurring: false,
+            repeatWeeks: 4
           };
           this.showEventModal = true;
         },
@@ -1847,63 +1966,74 @@ const firebaseConfig = {
 
           let titleToSave = this.activeEvent.title.trim().replace(/^\[[^\]]+\]\s*/, '');
 
-          if (this.activeEvent.categoryId === 'cat_hw') {
-            const exists = this.homeworks.some(h => h.id === this.activeEvent.id);
-            if (!exists) {
-              this.homeworks.push({
-                id: this.activeEvent.id,
-                class: this.activeEvent.targetClass || this.currentClass,
-                title: titleToSave,
-                date: this.activeEvent.date,
-                isAllDay: this.activeEvent.isAllDay,
-                startTime: this.activeEvent.startTime,
-                endTime: this.activeEvent.endTime
-              });
-              this.autoSelectFirstHomework();
-            } else {
-              const hw = this.homeworks.find(h => h.id === this.activeEvent.id);
-              if (hw) {
-                hw.title = titleToSave;
-                hw.date = this.activeEvent.date;
-                hw.isAllDay = this.activeEvent.isAllDay;
-                hw.startTime = this.activeEvent.startTime;
-                hw.endTime = this.activeEvent.endTime;
+          // 判斷是否為新增模式下的「每週循環課表」自動批量建立
+          const repeatWeeksCount = (!this.isEditEventMode && this.activeEvent.isRecurring) ? Math.min(Math.max(this.activeEvent.repeatWeeks || 1, 1), 20) : 1;
+          const baseDate = new Date(this.activeEvent.date);
+
+          for (let w = 0; w < repeatWeeksCount; w++) {
+            const currentD = new Date(baseDate);
+            currentD.setDate(baseDate.getDate() + (w * 7));
+            const dateStrStr = this.formatDateStr(currentD);
+            const currentEventId = w === 0 ? this.activeEvent.id : ('evt_' + Date.now() + '_' + w);
+
+            if (this.activeEvent.categoryId === 'cat_hw') {
+              const exists = this.homeworks.some(h => h.id === currentEventId);
+              if (!exists) {
+                this.homeworks.push({
+                  id: currentEventId,
+                  class: this.activeEvent.targetClass || this.currentClass,
+                  title: titleToSave,
+                  date: dateStrStr,
+                  isAllDay: this.activeEvent.isAllDay,
+                  startTime: this.activeEvent.startTime,
+                  endTime: this.activeEvent.endTime
+                });
+              } else {
+                const hw = this.homeworks.find(h => h.id === currentEventId);
+                if (hw) {
+                  hw.title = titleToSave;
+                  hw.date = dateStrStr;
+                  hw.isAllDay = this.activeEvent.isAllDay;
+                  hw.startTime = this.activeEvent.startTime;
+                  hw.endTime = this.activeEvent.endTime;
+                }
               }
-            }
-          } else if (this.activeEvent.categoryId === 'cat_quiz') {
-            const exists = this.quizzes.some(q => q.id === this.activeEvent.id);
-            if (!exists) {
-              this.quizzes.push({
-                id: this.activeEvent.id,
-                class: this.activeEvent.targetClass || this.currentClass,
-                title: titleToSave,
-                maxScore: 100,
-                date: this.activeEvent.date,
-                isAllDay: this.activeEvent.isAllDay,
-                startTime: this.activeEvent.startTime,
-                endTime: this.activeEvent.endTime
-              });
+              this.autoSelectFirstHomework();
+            } else if (this.activeEvent.categoryId === 'cat_quiz') {
+              const exists = this.quizzes.some(q => q.id === currentEventId);
+              if (!exists) {
+                this.quizzes.push({
+                  id: currentEventId,
+                  class: this.activeEvent.targetClass || this.currentClass,
+                  title: titleToSave,
+                  maxScore: 100,
+                  date: dateStrStr,
+                  isAllDay: this.activeEvent.isAllDay,
+                  startTime: this.activeEvent.startTime,
+                  endTime: this.activeEvent.endTime
+                });
+              } else {
+                const q = this.quizzes.find(q => q.id === currentEventId);
+                if (q) {
+                  q.title = titleToSave;
+                  q.date = dateStrStr;
+                  q.isAllDay = this.activeEvent.isAllDay;
+                  q.startTime = this.activeEvent.startTime;
+                  q.endTime = this.activeEvent.endTime;
+                }
+              }
               this.autoSelectFirstQuiz();
             } else {
-              const q = this.quizzes.find(q => q.id === this.activeEvent.id);
-              if (q) {
-                q.title = titleToSave;
-                q.date = this.activeEvent.date;
-                q.isAllDay = this.activeEvent.isAllDay;
-                q.startTime = this.activeEvent.startTime;
-                q.endTime = this.activeEvent.endTime;
+              if (this.isEditEventMode && w === 0) {
+                const src = this.activeEvent.source;
+                if (src === 'calendarEvents') {
+                  const idx = this.calendarEvents.findIndex(e => e.id === currentEventId);
+                  if (idx !== -1) this.calendarEvents[idx] = { ...this.activeEvent, title: titleToSave, date: dateStrStr };
+                }
+              } else {
+                this.calendarEvents.push({ ...this.activeEvent, id: currentEventId, title: titleToSave, date: dateStrStr });
               }
             }
-          }
-
-          if (this.isEditEventMode) {
-            const src = this.activeEvent.source;
-            if (src === 'calendarEvents') {
-              const idx = this.calendarEvents.findIndex(e => e.id === this.activeEvent.id);
-              if (idx !== -1) this.calendarEvents[idx] = { ...this.activeEvent, title: titleToSave };
-            }
-          } else {
-            this.calendarEvents.push({ ...this.activeEvent, title: titleToSave });
           }
 
           this.showEventModal = false;
@@ -2098,6 +2228,7 @@ const firebaseConfig = {
 
         async saveDataToFirebase() {
           if (!this.user || this.viewingArchiveId) return;
+          this.syncState = 'syncing';
           try {
             await db.collection('homework_trackers').doc(this.user.uid).set({
               currentClass: this.currentClass,
@@ -2121,8 +2252,10 @@ const firebaseConfig = {
               archives: this.archives,
               todos: this.todos
             });
+            this.syncState = 'synced';
           } catch (e) {
             console.error("同步失敗", e);
+            this.syncState = 'error';
           }
         },
 
@@ -2414,8 +2547,8 @@ const firebaseConfig = {
           }
 
           // 黑板在最下方 (Row = R)，故前排 = 高行數 (靠近黑板)，後排 = 低行數 (遠離黑板)
-          const frontRowThreshold = Math.max(R - 1, Math.ceil(R * 0.6)); // 前排邊界 (例: R=5 時為 R4, R5)
-          const backRowThreshold = Math.min(2, Math.floor(R * 0.4));     // 後排邊界 (例: R=5 時為 R1, R2)
+          const frontRowThreshold = Math.max(R - 1, Math.ceil(R * 0.6));
+          const backRowThreshold = Math.min(2, Math.floor(R * 0.4));
 
           let bestAssignment = null;
           let foundValid = false;
@@ -2444,10 +2577,9 @@ const firebaseConfig = {
               const st = unpinnedStudents[i];
               const slot = shuffledSlots[i];
 
-              // 條件判斷 (黑板在最下方：slot.r 越大越靠近黑板)
-              if (st.isTall && slot.r >= frontRowThreshold) { valid = false; break; }  // 高個子避開前排 (靠近黑板處)
-              if (st.frontRow && slot.r < frontRowThreshold) { valid = false; break; } // 前排優先 (必須在靠近黑板區域)
-              if (st.backRow && slot.r > backRowThreshold) { valid = false; break; }   // 後排優先 (必須在遠離黑板區域)
+              if (st.isTall && slot.r >= frontRowThreshold) { valid = false; break; }
+              if (st.frontRow && slot.r < frontRowThreshold) { valid = false; break; }
+              if (st.backRow && slot.r > backRowThreshold) { valid = false; break; }
 
               currentAssignment[st.id] = { r: slot.r, c: slot.c, pinned: false };
               gridMatrix[`${slot.r}_${slot.c}`] = st.id;
@@ -2516,7 +2648,6 @@ const firebaseConfig = {
               pinned: !pos.pinned
             };
           } else {
-            // 切換「空位釘選」狀態
             const emptyKey = `empty_${r}_${c}`;
             const emptyPos = this.seatingAssignments[this.currentClass][emptyKey];
             if (emptyPos && emptyPos.pinned) {
@@ -2563,7 +2694,6 @@ const firebaseConfig = {
           if (!this.seatingAssignments) this.seatingAssignments = {};
           if (!this.seatingAssignments[this.currentClass]) this.seatingAssignments[this.currentClass] = {};
 
-          // 如果學生被拖拽到一個「被鎖定的空位」，取消該空位的鎖定狀態
           const targetEmptyKey = `empty_${targetR}_${targetC}`;
           delete this.seatingAssignments[this.currentClass][targetEmptyKey];
 
