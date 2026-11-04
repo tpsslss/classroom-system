@@ -8,7 +8,6 @@
   <!-- 網頁分頁標籤圖示 (Favicon) -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>">
   
-  <!-- 鎖定滾動條寬度，消除切換頁面/班別時的畫面左右跳動問題 -->
   <style>
     html {
       scrollbar-gutter: stable;
@@ -87,13 +86,13 @@
           </div>
 
           <nav class="flex bg-black/20 p-1 rounded-lg text-sm font-medium">
-            <button @click="switchTab('calendar')" :class="currentTab === 'calendar' ? 'bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 shadow font-bold' : 'text-white hover:text-white/80'" class="px-3 py-1.5 rounded-md transition">📅 行事曆</button>
-            <button @click="switchTab('homework')" :class="currentTab === 'homework' ? 'bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 shadow font-bold' : 'text-white hover:text-white/80'" class="px-3 py-1.5 rounded-md transition">📋 功課管理</button>
-            <button @click="switchTab('overview')" :class="currentTab === 'overview' ? 'bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 shadow font-bold' : 'text-white hover:text-white/80'" class="px-3 py-1.5 rounded-md transition">📊 學生總覽</button>
-            <button @click="switchTab('quiz')" :class="currentTab === 'quiz' ? 'bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 shadow font-bold' : 'text-white hover:text-white/80'" class="px-3 py-1.5 rounded-md transition">📈 測驗成績</button>
+            <button @click="switchTab('calendar')" :class="currentTab === 'calendar' ? 'bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 shadow font-bold' : 'text-white hover:text-white/80'" class="px-3 py-1.5 rounded-md transition">📅 行事曆待辦</button>
+            <button @click="switchTab('homework')" :class="currentTab === 'homework' ? 'bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 shadow font-bold' : 'text-white hover:text-white/80'" class="px-3 py-1.5 rounded-md transition">📋 按功課管理</button>
+            <button @click="switchTab('overview')" :class="currentTab === 'overview' ? 'bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 shadow font-bold' : 'text-white hover:text-white/80'" class="px-3 py-1.5 rounded-md transition">📊 學生整體總覽</button>
+            <button @click="switchTab('quiz')" :class="currentTab === 'quiz' ? 'bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 shadow font-bold' : 'text-white hover:text-white/80'" class="px-3 py-1.5 rounded-md transition">📈 測驗成績分析</button>
             <button @click="switchTab('seating')" :class="currentTab === 'seating' ? 'bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 shadow font-bold' : 'text-white hover:text-white/80'" class="px-3 py-1.5 rounded-md transition">🪑 課室座位表</button>
             <button @click="switchTab('incidents')" :class="currentTab === 'incidents' ? 'bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 shadow font-bold' : 'text-white hover:text-white/80'" class="px-3 py-1.5 rounded-md transition">📝 課堂紀錄</button>
-            <button @click="switchTab('settings')" :class="currentTab === 'settings' ? 'bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 shadow font-bold' : 'text-white hover:text-white/80'" class="px-3 py-1.5 rounded-md transition">⚙️ 設定</button>
+            <button @click="switchTab('settings')" :class="currentTab === 'settings' ? 'bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 shadow font-bold' : 'text-white hover:text-white/80'" class="px-3 py-1.5 rounded-md transition">⚙️ 設定與歸檔</button>
           </nav>
 
           <button @click="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-2.5 py-1.5 rounded-lg font-bold shadow">📊 Excel</button>
@@ -180,7 +179,7 @@
         <!-- 側邊欄與行事曆主體區塊 -->
         <div class="flex flex-col md:flex-row gap-5">
           
-          <!-- 左側：分類選單 (支援動態折疊) -->
+          <!-- 左側：分類選單 -->
           <div x-show="!isSidebarCollapsed" 
                x-transition:enter="transition ease-out duration-200"
                x-transition:enter-start="opacity-0 -translate-x-4"
@@ -231,7 +230,7 @@
 
             <div class="p-3 bg-indigo-50/50 dark:bg-slate-700/20 rounded-xl border border-indigo-100 dark:border-slate-700 text-xs space-y-1">
               <p class="font-bold text-indigo-700 dark:text-indigo-300">💡 提示：</p>
-              <p class="text-slate-500 dark:text-slate-400">點擊網格中的日期即可建立日程；按住卡片可直接拖拽至其他日期變更日程。</p>
+              <p class="text-slate-500 dark:text-slate-400">將滑鼠懸浮在事項上即可查看完整資訊浮圖；按住卡片可拖拽變更日期。</p>
             </div>
           </div>
 
@@ -276,21 +275,32 @@
                       <span class="text-xs text-indigo-500 opacity-0 group-hover:opacity-100 font-bold">+</span>
                     </div>
 
-                    <!-- 當日事件卡片清單 -->
+                    <!-- 當日事件卡片清單 (帶有 Hover Tooltip) -->
                     <div class="space-y-1.5 overflow-y-auto max-h-[105px] no-scrollbar flex-1">
                       <template x-for="item in day.items" :key="item.id">
                         <div @click.stop="openEditEventModal(item)" 
                              draggable="true"
                              @dragstart="handleCalendarEventDragStart($event, item)"
-                             class="text-[11px] px-2 py-1 rounded-lg font-bold shadow-xs hover:scale-102 transition flex items-center space-x-1 cursor-grab active:cursor-grabbing overflow-hidden"
-                             :style="getEventCardStyle(item)"
-                             :title="`${item.title} (按住可拖拽修改日期)`">
+                             class="group/item relative text-[11px] px-2 py-1 rounded-lg font-bold shadow-xs hover:scale-102 transition flex items-center space-x-1 cursor-grab active:cursor-grabbing"
+                             :style="getEventCardStyle(item)">
                           
                           <template x-if="getItemTimeText(item)">
                             <span class="bg-black/20 dark:bg-white/20 text-[9px] px-1 py-0.2 rounded font-mono shrink-0" x-text="getItemTimeText(item)"></span>
                           </template>
                           
                           <span class="truncate" x-text="item.title"></span>
+
+                          <!-- 💡 滑鼠懸浮浮動卡片 (Hover Tooltip) -->
+                          <div class="hidden group-hover/item:block absolute left-0 bottom-full mb-1.5 w-52 bg-slate-900/95 text-white text-xs rounded-xl p-3 shadow-2xl z-[100] pointer-events-none border border-slate-700/80 backdrop-blur-md space-y-1">
+                            <p class="font-bold border-b border-slate-700 pb-1 text-indigo-300 truncate" x-text="item.title"></p>
+                            <div class="space-y-0.5 text-[10px] text-slate-300">
+                              <p>🏷️ 類別：<span class="font-bold text-white" x-text="getCategoryName(item.categoryId)"></span></p>
+                              <template x-if="getItemTimeText(item)">
+                                <p>🕒 課節/時間：<span class="font-bold text-amber-300" x-text="`${getItemTimeText(item)} (${item.startTime || ''} - ${item.endTime || ''})`"></span></p>
+                              </template>
+                              <p>📅 日期：<span class="font-mono text-slate-400" x-text="item.date"></span></p>
+                            </div>
+                          </div>
                         </div>
                       </template>
                     </div>
@@ -329,9 +339,6 @@
                       </template>
                     </div>
                   </div>
-                </template>
-                <template x-if="getCalendarDays().filter(d => d.items.length > 0).length === 0">
-                  <div class="text-center py-12 text-slate-400 text-xs">本月份尚無任何日程事項或相關分類已被隱藏。</div>
                 </template>
               </div>
             </div>
@@ -486,7 +493,7 @@
                 <th class="py-2.5 px-3">學號</th>
                 <th class="py-2.5 px-3">姓名</th>
                 <th class="py-2.5 px-3 text-emerald-600">✅ 已完成</th>
-                <th class="py-2.5 px-3 text-red-600">❌ 未交</th>
+                <th class="py-2.5 px-3 text-red-600">❌ 未交數量</th>
                 <th class="py-2.5 px-3 text-amber-500">⚠️ 待改正</th>
                 <th class="py-2.5 px-3 text-orange-500">⏳ 待補交</th>
                 <th class="py-2.5 px-3 text-purple-600">🌙 缺席</th>
@@ -800,7 +807,6 @@
             </template>
           </div>
 
-          <!-- 底部講台/黑板指示 -->
           <div class="bg-slate-800 text-white text-center py-2 rounded-xl font-bold text-xs tracking-widest shadow-inner">
             🖥️ 講台 / 黑板方向
           </div>
@@ -932,7 +938,7 @@
 
   <!-- ==================== 所有自訂 Modal 彈窗區塊 ==================== -->
 
-  <!-- 彈窗 0A：新增/修改日程事項彈窗 -->
+  <!-- ✨ 彈窗 0A：新增/修改日程事項彈窗 (包含學校課節模式選項) -->
   <div x-show="showEventModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-md shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b pb-2 dark:border-slate-700">
@@ -955,47 +961,52 @@
           </select>
         </div>
 
-        <div x-show="activeEvent.categoryId === 'cat_hw' || activeEvent.categoryId === 'cat_quiz'">
-          <label class="block text-xs font-bold text-indigo-600 dark:text-indigo-400 mb-1">同步建立至班別：</label>
-          <select x-model="activeEvent.targetClass" class="w-full px-3 py-1.5 border rounded-xl bg-indigo-50 dark:bg-slate-700 font-bold text-indigo-900 dark:text-indigo-200">
-            <template x-for="cls in classes" :key="cls">
-              <option :value="cls" x-text="`${cls} 班`"></option>
-            </template>
-          </select>
-        </div>
-
         <div>
           <label class="block text-xs font-bold text-slate-500 mb-1">起始日期 (Date)</label>
           <input type="date" x-model="activeEvent.date" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-700 font-bold">
         </div>
 
-        <!-- 每週重複/循環課表選項 (僅新增模式) -->
-        <template x-if="!isEditEventMode">
-          <div class="p-3 bg-slate-50 dark:bg-slate-700/40 rounded-xl space-y-2 border border-slate-200 dark:border-slate-600">
+        <!-- 🕒 時間與課節設定切換區塊 -->
+        <div class="p-3 bg-slate-50 dark:bg-slate-700/40 rounded-xl space-y-3 border border-slate-200 dark:border-slate-600">
+          <div class="flex items-center justify-between">
             <label class="flex items-center space-x-2 cursor-pointer">
-              <input type="checkbox" x-model="activeEvent.isRecurring" class="w-4 h-4 rounded text-indigo-600">
-              <span class="text-xs font-bold text-indigo-700 dark:text-indigo-300">🔄 每週重複建立 (循環課表)</span>
+              <input type="checkbox" x-model="activeEvent.isAllDay" class="w-4 h-4 rounded text-indigo-600">
+              <span class="text-xs font-bold">全日活動 (All-day)</span>
             </label>
 
-            <div x-show="activeEvent.isRecurring" class="flex items-center space-x-2 pt-1 text-xs">
-              <span class="text-slate-500 font-bold">重複週數：</span>
-              <input type="number" x-model.number="activeEvent.repeatWeeks" min="2" max="20" class="w-20 px-2.5 py-1 border rounded-lg dark:bg-slate-700 font-bold">
-              <span class="text-slate-400">週 (每 7 天自動建立 1 次)</span>
+            <div x-show="!activeEvent.isAllDay" class="flex bg-slate-200 dark:bg-slate-600 p-0.5 rounded-lg text-[11px] font-bold">
+              <button type="button" @click="activeEvent.timeType = 'period'" :class="activeEvent.timeType === 'period' ? 'bg-white text-indigo-600 dark:bg-slate-800 dark:text-indigo-400 shadow' : 'text-slate-500 dark:text-slate-300'" class="px-2.5 py-1 rounded-md transition">🏫 學校課節</button>
+              <button type="button" @click="activeEvent.timeType = 'custom'" :class="activeEvent.timeType === 'custom' ? 'bg-white text-indigo-600 dark:bg-slate-800 dark:text-indigo-400 shadow' : 'text-slate-500 dark:text-slate-300'" class="px-2.5 py-1 rounded-md transition">🕒 具體時間</button>
             </div>
           </div>
-        </template>
 
-        <div class="p-3 bg-slate-50 dark:bg-slate-700/40 rounded-xl space-y-2 border border-slate-200 dark:border-slate-600">
-          <label class="flex items-center space-x-2 cursor-pointer">
-            <input type="checkbox" x-model="activeEvent.isAllDay" class="w-4 h-4 rounded text-indigo-600">
-            <span class="text-xs font-bold">全日活動 (All-day)</span>
-          </label>
+          <!-- 1. 學校課節模式 (下拉選單) -->
+          <div x-show="!activeEvent.isAllDay && activeEvent.timeType === 'period'" class="grid grid-cols-2 gap-3 pt-1">
+            <div>
+              <label class="block text-[10px] text-slate-400 font-bold mb-1">開始課節</label>
+              <select x-model="activeEvent.startPeriod" @change="onPeriodChange()" class="w-full px-2.5 py-1.5 border rounded-xl dark:bg-slate-700 font-bold text-xs">
+                <template x-for="p in lessonPeriods" :key="p.id">
+                  <option :value="p.id" x-text="`${p.label} (${p.startTime})`"></option>
+                </template>
+              </select>
+            </div>
 
-          <div x-show="!activeEvent.isAllDay" class="grid grid-cols-2 gap-3 pt-2">
+            <div>
+              <label class="block text-[10px] text-slate-400 font-bold mb-1">結束課節</label>
+              <select x-model="activeEvent.endPeriod" @change="onPeriodChange()" class="w-full px-2.5 py-1.5 border rounded-xl dark:bg-slate-700 font-bold text-xs">
+                <template x-for="p in lessonPeriods" :key="p.id">
+                  <option :value="p.id" x-text="`${p.label} (${p.endTime})`"></option>
+                </template>
+              </select>
+            </div>
+          </div>
+
+          <!-- 2. 具體時間模式 -->
+          <div x-show="!activeEvent.isAllDay && activeEvent.timeType === 'custom'" class="grid grid-cols-2 gap-3 pt-1">
             <div class="relative">
               <label class="block text-[10px] text-slate-400 font-bold mb-1">開始時間</label>
               <button @click="openCustomTimePicker('startTime')" 
-                      class="w-full px-3 py-2 border rounded-xl dark:bg-slate-700 font-mono font-bold text-xs bg-white text-slate-800 dark:text-slate-100 flex justify-between items-center shadow-xs hover:border-indigo-500">
+                      class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-700 font-mono font-bold text-xs bg-white text-slate-800 dark:text-slate-100 flex justify-between items-center shadow-xs">
                 <span x-text="formatDisplayTime(activeEvent.startTime)"></span>
                 <span class="text-slate-400 text-[10px]">🕒</span>
               </button>
@@ -1004,7 +1015,7 @@
             <div class="relative">
               <label class="block text-[10px] text-slate-400 font-bold mb-1">結束時間</label>
               <button @click="openCustomTimePicker('endTime')" 
-                      class="w-full px-3 py-2 border rounded-xl dark:bg-slate-700 font-mono font-bold text-xs bg-white text-slate-800 dark:text-slate-100 flex justify-between items-center shadow-xs hover:border-indigo-500">
+                      class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-700 font-mono font-bold text-xs bg-white text-slate-800 dark:text-slate-100 flex justify-between items-center shadow-xs">
                 <span x-text="formatDisplayTime(activeEvent.endTime)"></span>
                 <span class="text-slate-400 text-[10px]">🕒</span>
               </button>
@@ -1027,26 +1038,23 @@
     </div>
   </div>
 
-  <!-- ✨ 彈窗 0F：全新自訂功課新增/修改 Modal (代替原生 prompt) -->
+  <!-- 彈窗 0F：自訂功課新增/修改 Modal -->
   <div x-show="showHwModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-md shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b pb-2 dark:border-slate-700">
         <h3 class="font-bold text-lg" x-text="isEditHwMode ? '✏️ 修改功課名稱' : '➕ 新增功課'"></h3>
         <button @click="showHwModal = false" class="text-slate-400 hover:text-slate-600 font-bold">✕</button>
       </div>
-
       <div class="space-y-3 text-sm">
         <div>
           <label class="block text-xs font-bold text-slate-500 mb-1">功課名稱 / 內容</label>
           <input type="text" x-model="activeHw.title" placeholder="例如: 數學工作紙 (三)" class="w-full px-3 py-2 border rounded-xl dark:bg-slate-700 font-bold focus:ring-2 focus:ring-indigo-500">
         </div>
-
         <div>
           <label class="block text-xs font-bold text-slate-500 mb-1">截止 / 繳交日期 (Date)</label>
           <input type="date" x-model="activeHw.date" class="w-full px-3 py-2 border rounded-xl dark:bg-slate-700 font-bold">
         </div>
       </div>
-
       <div class="flex justify-end space-x-2 pt-2 border-t dark:border-slate-700">
         <button @click="showHwModal = false" class="px-4 py-1.5 text-xs text-slate-500 font-bold">取消</button>
         <button @click="saveHomeworkModal()" :style="`background-color: ${themeColor}`" class="px-5 py-2 text-xs text-white font-bold rounded-xl shadow">儲存修改</button>
@@ -1054,20 +1062,18 @@
     </div>
   </div>
 
-  <!-- ✨ 彈窗 0G：全新自訂測驗新增/修改 Modal (代替原生 prompt) -->
+  <!-- 彈窗 0G：自訂測驗新增/修改 Modal -->
   <div x-show="showQuizModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-md shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b pb-2 dark:border-slate-700">
         <h3 class="font-bold text-lg" x-text="isEditQuizMode ? '✏️ 修改測驗名稱' : '➕ 新增測驗'"></h3>
         <button @click="showQuizModal = false" class="text-slate-400 hover:text-slate-600 font-bold">✕</button>
       </div>
-
       <div class="space-y-3 text-sm">
         <div>
           <label class="block text-xs font-bold text-slate-500 mb-1">測驗名稱 / 項目</label>
           <input type="text" x-model="activeQuiz.title" placeholder="例如: 單元二小測" class="w-full px-3 py-2 border rounded-xl dark:bg-slate-700 font-bold focus:ring-2 focus:ring-indigo-500">
         </div>
-
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-bold text-slate-500 mb-1">測驗滿分</label>
@@ -1079,7 +1085,6 @@
           </div>
         </div>
       </div>
-
       <div class="flex justify-end space-x-2 pt-2 border-t dark:border-slate-700">
         <button @click="showQuizModal = false" class="px-4 py-1.5 text-xs text-slate-500 font-bold">取消</button>
         <button @click="saveQuizModal()" :style="`background-color: ${themeColor}`" class="px-5 py-2 text-xs text-white font-bold rounded-xl shadow">儲存修改</button>
@@ -1339,7 +1344,7 @@
             </div>
 
             <div class="text-xs">
-              <span class="text-slate-400 font-medium">不相鄰：</span>
+              <span class="text-slate-400 font-medium">避開同桌同學（矛盾不相鄰）：</span>
               <div class="flex flex-wrap gap-1 mt-1">
                 <template x-for="other in currentStudents.filter(o => o.id !== s.id)" :key="other.id">
                   <button @click="toggleAvoidStudent(s, other.id)" 
@@ -1478,7 +1483,7 @@
     </div>
   </div>
 
-  <!-- JavaScript 邏輯腳本 -->
+  <!-- JavaScript 完整邏輯腳本 -->
   <script>
 const firebaseConfig = {
   apiKey: "AIzaSyA5YYncT7-6_0O3kZh1Iq0zoreOVk2og50",
@@ -1509,7 +1514,23 @@ const firebaseConfig = {
         archives: [],
         viewingArchiveId: null,
 
-        // 日曆模組 state
+        // 學校課節時間對映表 (精簡代碼: L1, Break, Lunch 等)
+        lessonPeriods: [
+          { id: 'HR1', label: '早會 / 班主任節', code: 'HR1', startTime: '08:10', endTime: '08:25' },
+          { id: 'L1', label: '第 1 節', code: 'L1', startTime: '08:25', endTime: '09:05' },
+          { id: 'L2', label: '第 2 節', code: 'L2', startTime: '09:05', endTime: '09:45' },
+          { id: 'L3', label: '第 3 節', code: 'L3', startTime: '09:45', endTime: '10:25' },
+          { id: 'Break', label: '小息', code: 'Break', startTime: '10:25', endTime: '10:40' },
+          { id: 'L4', label: '第 4 節', code: 'L4', startTime: '10:40', endTime: '11:20' },
+          { id: 'L5', label: '第 5 節', code: 'L5', startTime: '11:20', endTime: '12:00' },
+          { id: 'L6', label: '第 6 節', code: 'L6', startTime: '12:00', endTime: '12:40' },
+          { id: 'Lunch', label: '午膳', code: 'Lunch', startTime: '12:40', endTime: '13:50' },
+          { id: 'L7', label: '第 7 節', code: 'L7', startTime: '13:50', endTime: '14:25' },
+          { id: 'L8', label: '第 8 節', code: 'L8', startTime: '14:25', endTime: '15:00' },
+          { id: 'L9', label: '第 9 節', code: 'L9', startTime: '15:00', endTime: '15:35' },
+          { id: 'HR2', label: '放學班主任節', code: 'HR2', startTime: '15:35', endTime: '15:50' }
+        ],
+
         calYear: new Date().getFullYear(),
         calMonth: new Date().getMonth(),
         calViewMode: 'grid',
@@ -1517,9 +1538,7 @@ const firebaseConfig = {
 
         colorPalette: [
           '#b80672', '#d9381e', '#e65100', '#f57c00', '#fbc02d', '#388e3c',
-          '#00897b', '#0097a7', '#0288d1', '#1565c0', '#3f51b5', '#6a1b9a',
-          '#e91e63', '#d81b60', '#8e24aa', '#5e35b1', '#3949ab', '#1e88e5',
-          '#039be5', '#00acc1', '#00897b', '#43a047', '#7cb342', '#c0ca33'
+          '#00897b', '#0097a7', '#0288d1', '#1565c0', '#3f51b5', '#6a1b9a'
         ],
 
         calendarCategories: [
@@ -1539,12 +1558,10 @@ const firebaseConfig = {
         draggedCalendarItem: null,
         calendarEvents: [],
 
-        // 自訂功課 Modal State
         showHwModal: false,
         isEditHwMode: false,
         activeHw: { id: '', title: '', date: '', class: '' },
 
-        // 自訂測驗 Modal State
         showQuizModal: false,
         isEditQuizMode: false,
         activeQuiz: { id: '', title: '', maxScore: 100, date: '', class: '' },
@@ -1557,11 +1574,12 @@ const firebaseConfig = {
           date: '',
           categoryId: 'cat_todo',
           targetClass: '3A',
-          isAllDay: true,
-          startTime: '09:00',
-          endTime: '10:00',
-          isRecurring: false,
-          repeatWeeks: 4
+          isAllDay: false,
+          timeType: 'period', // 'period' 課節模式 | 'custom' 具體時間模式
+          startPeriod: 'L1',
+          endPeriod: 'L1',
+          startTime: '08:25',
+          endTime: '09:05'
         },
 
         showTimePickerModal: false,
@@ -1615,6 +1633,38 @@ const firebaseConfig = {
           return `${period} ${String(dispH).padStart(2, '0')}:${mStr || '00'}`;
         },
 
+        onPeriodChange() {
+          const sp = this.lessonPeriods.find(p => p.id === this.activeEvent.startPeriod);
+          const ep = this.lessonPeriods.find(p => p.id === this.activeEvent.endPeriod);
+          if (sp) this.activeEvent.startTime = sp.startTime;
+          if (ep) this.activeEvent.endTime = ep.endTime;
+        },
+
+        getItemTimeText(item) {
+          if (item.isAllDay) return '';
+
+          const sp = this.lessonPeriods.find(p => p.startTime === item.startTime);
+          const ep = this.lessonPeriods.find(p => p.endTime === item.endTime);
+
+          if (sp && ep) {
+            if (sp.id === ep.id) return sp.code;
+            if (sp.code.startsWith('L') && ep.code.startsWith('L')) {
+              const sNum = sp.code.replace('L', '');
+              const eNum = ep.code.replace('L', '');
+              return `L${sNum}-${eNum}`;
+            }
+            return `${sp.code}-${ep.code}`;
+          }
+
+          if (item.startTime) {
+            if (item.endTime && item.endTime !== item.startTime) {
+              return `${item.startTime}-${item.endTime}`;
+            }
+            return item.startTime;
+          }
+          return '';
+        },
+
         toggleCardStyle() {
           this.cardStyle = this.cardStyle === 'solid' ? 'translucent' : 'solid';
           this.saveDataToFirebase();
@@ -1626,14 +1676,6 @@ const firebaseConfig = {
             return `background-color: ${color}22; color: ${color}; border: 1px solid ${color}66;`;
           }
           return `background-color: ${color}; color: #ffffff;`;
-        },
-
-        getItemTimeText(item) {
-          if (item.isAllDay || !item.startTime) return '';
-          if (item.endTime && item.endTime !== item.startTime) {
-            return `${item.startTime}-${item.endTime}`;
-          }
-          return item.startTime;
         },
 
         focusNextScoreInput(e) {
@@ -1918,8 +1960,8 @@ const firebaseConfig = {
                 date: h.date || dateStr,
                 categoryId: 'cat_hw',
                 isAllDay: h.isAllDay !== undefined ? h.isAllDay : true,
-                startTime: h.startTime || '09:00',
-                endTime: h.endTime || '10:00'
+                startTime: h.startTime || '08:25',
+                endTime: h.endTime || '09:05'
               });
             }
           });
@@ -1933,8 +1975,8 @@ const firebaseConfig = {
                 date: q.date || dateStr,
                 categoryId: 'cat_quiz',
                 isAllDay: q.isAllDay !== undefined ? q.isAllDay : true,
-                startTime: q.startTime || '09:00',
-                endTime: q.endTime || '10:00'
+                startTime: q.startTime || '08:25',
+                endTime: q.endTime || '09:05'
               });
             }
           });
@@ -1999,11 +2041,12 @@ const firebaseConfig = {
             date: dateStr || this.getLocalToday(),
             categoryId: this.calendarCategories[0] ? this.calendarCategories[0].id : 'cat_todo',
             targetClass: this.currentClass,
-            isAllDay: true,
-            startTime: '09:00',
-            endTime: '10:00',
-            isRecurring: false,
-            repeatWeeks: 4
+            isAllDay: false,
+            timeType: 'period',
+            startPeriod: 'L1',
+            endPeriod: 'L1',
+            startTime: '08:25',
+            endTime: '09:05'
           };
           this.showEventModal = true;
         },
@@ -2012,6 +2055,10 @@ const firebaseConfig = {
           if (item.isReadOnly) return;
           this.isEditEventMode = true;
           let cleanTitle = (item.title || '').replace(/^\[[^\]]+\]\s*/, '');
+          
+          const sp = this.lessonPeriods.find(p => p.startTime === item.startTime);
+          const ep = this.lessonPeriods.find(p => p.endTime === item.endTime);
+
           this.activeEvent = {
             id: item.id,
             source: item.source || 'calendarEvents',
@@ -2019,11 +2066,12 @@ const firebaseConfig = {
             date: item.date,
             categoryId: item.categoryId || 'cat_todo',
             targetClass: this.currentClass,
-            isAllDay: item.isAllDay !== undefined ? item.isAllDay : true,
-            startTime: item.startTime || '09:00',
-            endTime: item.endTime || '10:00',
-            isRecurring: false,
-            repeatWeeks: 4
+            isAllDay: item.isAllDay !== undefined ? item.isAllDay : false,
+            timeType: (sp && ep) ? 'period' : 'custom',
+            startPeriod: sp ? sp.id : 'L1',
+            endPeriod: ep ? ep.id : 'L1',
+            startTime: item.startTime || '08:25',
+            endTime: item.endTime || '09:05'
           };
           this.showEventModal = true;
         },
@@ -2034,73 +2082,16 @@ const firebaseConfig = {
 
           let titleToSave = this.activeEvent.title.trim().replace(/^\[[^\]]+\]\s*/, '');
 
-          const repeatWeeksCount = (!this.isEditEventMode && this.activeEvent.isRecurring) ? Math.min(Math.max(this.activeEvent.repeatWeeks || 1, 1), 20) : 1;
-          const baseDate = new Date(this.activeEvent.date);
-
-          for (let w = 0; w < repeatWeeksCount; w++) {
-            const currentD = new Date(baseDate);
-            currentD.setDate(baseDate.getDate() + (w * 7));
-            const dateStrStr = this.formatDateStr(currentD);
-            const currentEventId = w === 0 ? this.activeEvent.id : ('evt_' + Date.now() + '_' + w);
-
-            if (this.activeEvent.categoryId === 'cat_hw') {
-              const exists = this.homeworks.some(h => h.id === currentEventId);
-              if (!exists) {
-                this.homeworks.push({
-                  id: currentEventId,
-                  class: this.activeEvent.targetClass || this.currentClass,
-                  title: titleToSave,
-                  date: dateStrStr,
-                  isAllDay: this.activeEvent.isAllDay,
-                  startTime: this.activeEvent.startTime,
-                  endTime: this.activeEvent.endTime
-                });
-              } else {
-                const hw = this.homeworks.find(h => h.id === currentEventId);
-                if (hw) {
-                  hw.title = titleToSave;
-                  hw.date = dateStrStr;
-                  hw.isAllDay = this.activeEvent.isAllDay;
-                  hw.startTime = this.activeEvent.startTime;
-                  hw.endTime = this.activeEvent.endTime;
-                }
-              }
-              this.autoSelectFirstHomework();
-            } else if (this.activeEvent.categoryId === 'cat_quiz') {
-              const exists = this.quizzes.some(q => q.id === currentEventId);
-              if (!exists) {
-                this.quizzes.push({
-                  id: currentEventId,
-                  class: this.activeEvent.targetClass || this.currentClass,
-                  title: titleToSave,
-                  maxScore: 100,
-                  date: dateStrStr,
-                  isAllDay: this.activeEvent.isAllDay,
-                  startTime: this.activeEvent.startTime,
-                  endTime: this.activeEvent.endTime
-                });
-              } else {
-                const q = this.quizzes.find(q => q.id === currentEventId);
-                if (q) {
-                  q.title = titleToSave;
-                  q.date = dateStrStr;
-                  q.isAllDay = this.activeEvent.isAllDay;
-                  q.startTime = this.activeEvent.startTime;
-                  q.endTime = this.activeEvent.endTime;
-                }
-              }
-              this.autoSelectFirstQuiz();
-            } else {
-              if (this.isEditEventMode && w === 0) {
-                const src = this.activeEvent.source;
-                if (src === 'calendarEvents') {
-                  const idx = this.calendarEvents.findIndex(e => e.id === currentEventId);
-                  if (idx !== -1) this.calendarEvents[idx] = { ...this.activeEvent, title: titleToSave, date: dateStrStr };
-                }
-              } else {
-                this.calendarEvents.push({ ...this.activeEvent, id: currentEventId, title: titleToSave, date: dateStrStr });
+          if (this.isEditEventMode) {
+            const src = this.activeEvent.source;
+            if (src === 'calendarEvents') {
+              const idx = this.calendarEvents.findIndex(e => e.id === this.activeEvent.id);
+              if (idx !== -1) {
+                this.calendarEvents[idx] = { ...this.activeEvent, title: titleToSave };
               }
             }
+          } else {
+            this.calendarEvents.push({ ...this.activeEvent, title: titleToSave });
           }
 
           this.showEventModal = false;
@@ -2124,7 +2115,6 @@ const firebaseConfig = {
           this.saveDataToFirebase();
         },
 
-        // ✨ 功課 Modal 邏輯處理
         openAddHomeworkModal() {
           this.isEditHwMode = false;
           this.activeHw = {
@@ -2133,8 +2123,8 @@ const firebaseConfig = {
             title: '',
             date: this.getLocalToday(),
             isAllDay: true,
-            startTime: '09:00',
-            endTime: '10:00'
+            startTime: '08:25',
+            endTime: '09:05'
           };
           this.showHwModal = true;
         },
@@ -2149,8 +2139,8 @@ const firebaseConfig = {
             title: hw.title,
             date: hw.date || this.getLocalToday(),
             isAllDay: hw.isAllDay !== undefined ? hw.isAllDay : true,
-            startTime: hw.startTime || '09:00',
-            endTime: hw.endTime || '10:00'
+            startTime: hw.startTime || '08:25',
+            endTime: hw.endTime || '09:05'
           };
           this.showHwModal = true;
         },
@@ -2176,7 +2166,6 @@ const firebaseConfig = {
           this.saveDataToFirebase();
         },
 
-        // ✨ 測驗 Modal 邏輯處理
         openAddQuizModal() {
           this.isEditQuizMode = false;
           this.activeQuiz = {
@@ -2186,8 +2175,8 @@ const firebaseConfig = {
             maxScore: 100,
             date: this.getLocalToday(),
             isAllDay: true,
-            startTime: '09:00',
-            endTime: '10:00'
+            startTime: '08:25',
+            endTime: '09:05'
           };
           this.showQuizModal = true;
         },
@@ -2203,8 +2192,8 @@ const firebaseConfig = {
             maxScore: q.maxScore || 100,
             date: q.date || this.getLocalToday(),
             isAllDay: q.isAllDay !== undefined ? q.isAllDay : true,
-            startTime: q.startTime || '09:00',
-            endTime: q.endTime || '10:00'
+            startTime: q.startTime || '08:25',
+            endTime: q.endTime || '09:05'
           };
           this.showQuizModal = true;
         },
@@ -3268,6 +3257,10 @@ const firebaseConfig = {
         getStudentName(id) {
           const s = this.students.find(st => st.id === id);
           return s ? `${s.no || ''} ${s.name}` : '未知學生';
+        },
+
+        getStudentIncidents(studentId) {
+          return this.incidents.filter(i => i.studentId === studentId);
         },
 
         saveIncident() {
