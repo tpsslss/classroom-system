@@ -44,19 +44,19 @@
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl space-y-4">
       <div class="text-5xl mb-2">📚</div>
       <h2 class="text-2xl font-bold">課堂管理系統</h2>
-      <p class="text-xs text-slate-500 dark:text-slate-400">請使用 Google 帳號登入，系統將會即時雲端同步您的數據。</p>
+      <p class="text-xs text-slate-500 dark:text-slate-400">請使用 Google 帳號登入，系統將會即時雲端同步您的數據並自動維持登入。</p>
       <button @click="loginGoogle()" 
               :disabled="isLoggingIn"
               :class="isLoggingIn ? 'opacity-50 cursor-not-allowed' : 'hover:bg-indigo-700'"
               class="w-full bg-indigo-600 text-white font-medium py-2.5 px-4 rounded-xl flex items-center justify-center space-x-2 shadow-lg transition">
-        <span x-text="isLoggingIn ? '⏳ 正在開啟登入視窗...' : '🔑 使用 Google 帳號登入'"></span>
+        <span x-text="isLoggingIn ? '⏳ 正在登入中...' : '🔑 使用 Google 帳號登入'"></span>
       </button>
     </div>
   </div>
 
   <!-- 主介面區塊 -->
   <div x-show="user">
-    <!-- 頂部導覽列 (與主題色連動) -->
+    <!-- 頂部導覽列 -->
     <header :style="`background-color: ${themeColor}`" class="text-white shadow-md transition-colors duration-300">
       <div class="max-w-[96%] mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-4">
         <div class="flex items-center space-x-3">
@@ -70,7 +70,7 @@
           </div>
         </div>
 
-        <!-- 頁籤選單與頂部工具按鈕 -->
+        <!-- 精簡後的 7 個導覽頁籤與工具按鈕 -->
         <div class="flex flex-wrap items-center gap-2">
           <!-- ☁️ 雲端同步狀態指示燈 -->
           <div class="flex items-center space-x-1.5 bg-black/20 px-2.5 py-1.5 rounded-xl border border-white/20 shrink-0 text-xs font-bold text-white">
@@ -98,7 +98,7 @@
           <button @click="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-2.5 py-1.5 rounded-lg font-bold shadow">📊 Excel</button>
           <button @click="exportJSON()" class="bg-black/30 hover:bg-black/40 text-white text-xs px-2.5 py-1.5 rounded-lg font-bold shadow">💾 備份</button>
           
-          <!-- 原生調色盤主題選擇器 -->
+          <!-- 主題色調色盤 -->
           <div class="flex items-center space-x-1.5 bg-black/20 px-2.5 py-1.5 rounded-xl border border-white/20 shrink-0">
             <span class="text-xs font-bold text-white/90">🎨 主題：</span>
             <input type="color" x-model="themeColor" @change="saveDataToFirebase()" class="w-6 h-6 rounded-lg cursor-pointer border-0 bg-transparent p-0 shrink-0 shadow-sm" title="點擊選擇全系統主題色彩">
@@ -143,10 +143,10 @@
         </div>
       </div>
 
-      <!-- ==================== 1. 主頁：Google Calendar 風格行事曆 ==================== -->
+      <!-- ==================== 1. 主頁：行事曆 ==================== -->
       <div x-show="currentTab === 'calendar'" class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 space-y-4">
         
-        <!-- Google Calendar Header 工具列 -->
+        <!-- Header 工具列 -->
         <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-700">
           <div class="flex items-center space-x-3">
             <button @click="goToday()" class="px-3.5 py-1.5 border border-slate-300 dark:border-slate-600 rounded-xl text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-700 transition" title="一鍵跳回今天的月份與日期">今天 Today</button>
@@ -158,7 +158,6 @@
           </div>
 
           <div class="flex flex-wrap items-center gap-2">
-            <!-- 側邊欄折疊/展開按鈕 -->
             <button @click="isSidebarCollapsed = !isSidebarCollapsed" 
                     class="px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded-xl text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center space-x-1"
                     :title="isSidebarCollapsed ? '展開側邊欄選單' : '折疊側邊欄以放大行事曆'">
@@ -176,7 +175,6 @@
           </div>
         </div>
 
-        <!-- 側邊欄與行事曆主體區塊 -->
         <div class="flex flex-col md:flex-row gap-5">
           
           <!-- 左側：分類選單 -->
@@ -234,7 +232,7 @@
             </div>
           </div>
 
-          <!-- 右側：行事曆主體 -->
+          <!-- 右側：行事曆主體 (已解除 overflow 裁切並提升 z-index) -->
           <div class="flex-1 min-w-0">
             
             <!-- 1. 網格視角 (Grid View) -->
@@ -249,19 +247,19 @@
                 <div class="text-indigo-500">六</div>
               </div>
 
-              <div class="grid grid-cols-7 gap-1.5 bg-slate-200 dark:bg-slate-700 p-1.5 rounded-2xl overflow-hidden">
+              <div class="grid grid-cols-7 gap-1.5 bg-slate-200 dark:bg-slate-700 p-1.5 rounded-2xl overflow-visible">
                 <template x-for="(day, idx) in getCalendarDays()" :key="idx">
                   <div @click="openCreateEventModal(day.dateStr)" 
                        @dragover.prevent=""
                        @drop="handleCalendarEventDrop($event, day.dateStr)"
-                       class="min-h-[140px] p-2 flex flex-col justify-between group hover:bg-indigo-50/40 dark:hover:bg-slate-700/50 transition cursor-pointer relative rounded-xl border"
+                       class="min-h-[140px] p-2 flex flex-col justify-between group hover:bg-indigo-50/40 dark:hover:bg-slate-700/50 transition cursor-pointer relative rounded-xl border z-1 hover:z-30"
                        :style="day.isToday ? `background-color: ${themeColor}1e; border: 2px solid ${themeColor};` : ''"
                        :class="[
                          !day.isToday && day.isCurrentMonth ? 'bg-white dark:bg-slate-800 border-transparent' : '',
                          !day.isCurrentMonth ? 'opacity-40 bg-slate-50/50 dark:bg-slate-850 border-transparent' : ''
                        ]">
                     
-                    <div class="flex justify-between items-center mb-1">
+                    <div class="flex justify-between items-center mb-1 pointer-events-none">
                       <div class="flex items-center space-x-1">
                         <span class="text-xs font-mono font-bold px-1 py-0.5 rounded-md"
                               :style="day.isToday ? `color: ${themeColor}; font-weight: 900;` : ''"
@@ -275,13 +273,13 @@
                       <span class="text-xs text-indigo-500 opacity-0 group-hover:opacity-100 font-bold">+</span>
                     </div>
 
-                    <!-- 當日事件卡片清單 (帶有 Hover Tooltip) -->
-                    <div class="space-y-1.5 overflow-y-auto max-h-[105px] no-scrollbar flex-1">
+                    <!-- 當日事件卡片清單 (Hover 浮卡置頂不被裁切) -->
+                    <div class="space-y-1.5 flex-1 relative z-10">
                       <template x-for="item in day.items" :key="item.id">
                         <div @click.stop="openEditEventModal(item)" 
                              draggable="true"
                              @dragstart="handleCalendarEventDragStart($event, item)"
-                             class="group/item relative text-[11px] px-2 py-1 rounded-lg font-bold shadow-xs hover:scale-102 transition flex items-center space-x-1 cursor-grab active:cursor-grabbing"
+                             class="group/item relative text-[11px] px-2 py-1 rounded-lg font-bold shadow-xs hover:scale-102 hover:z-50 transition flex items-center space-x-1 cursor-grab active:cursor-grabbing"
                              :style="getEventCardStyle(item)">
                           
                           <template x-if="getItemTimeText(item)">
@@ -290,13 +288,13 @@
                           
                           <span class="truncate" x-text="item.title"></span>
 
-                          <!-- 💡 滑鼠懸浮浮動卡片 (Hover Tooltip) -->
+                          <!-- 💡 滑鼠懸浮浮動卡片 (Hover Tooltip - 最高層級 z-[100]) -->
                           <div class="hidden group-hover/item:block absolute left-0 bottom-full mb-1.5 w-56 bg-slate-900/95 text-white text-xs rounded-xl p-3 shadow-2xl z-[100] pointer-events-none border border-slate-700/80 backdrop-blur-md space-y-1">
                             <p class="font-bold border-b border-slate-700 pb-1 text-indigo-300 truncate" x-text="item.title"></p>
                             <div class="space-y-0.5 text-[10px] text-slate-300">
                               <p>🏷️ 分類：<span class="font-bold text-white" x-text="getCategoryName(item.categoryId)"></span></p>
                               <template x-if="getItemTimeText(item)">
-                                <p>🕒 課節/時間：<span class="font-bold text-amber-300" x-text="`${getItemTimeText(item)} (${item.startTime || ''} - ${item.endTime || ''})`"></span></p>
+                                <p>🕒 課節/時間：<span class="font-bold text-amber-300" x-text="getFormattedTimeDisplay(item)"></span></p>
                               </template>
                               <p>📅 日期：<span class="font-mono text-slate-400" x-text="item.date"></span></p>
                             </div>
@@ -310,7 +308,7 @@
               </div>
             </div>
 
-            <!-- 2. 列表視角 (List View / Agenda) -->
+            <!-- 2. 列表視角 (List View) -->
             <div x-show="calViewMode === 'list'" class="space-y-3">
               <div class="p-3 bg-slate-50 dark:bg-slate-700/30 rounded-xl text-xs font-bold text-slate-500">
                 📋 <span x-text="`${calYear}年 ${calMonthNames[calMonth]}`"></span> 所有日程事項列表
@@ -336,13 +334,13 @@
                           </div>
                           <span class="text-[10px] opacity-90 font-normal ml-2 bg-black/20 px-1.5 py-0.5 rounded shrink-0" x-text="getCategoryName(item.categoryId)"></span>
 
-                          <!-- 💡 Hover Tooltip -->
+                          <!-- Hover Tooltip -->
                           <div class="hidden group-hover/item:block absolute left-0 bottom-full mb-1.5 w-56 bg-slate-900/95 text-white text-xs rounded-xl p-3 shadow-2xl z-[100] pointer-events-none border border-slate-700/80 backdrop-blur-md space-y-1">
                             <p class="font-bold border-b border-slate-700 pb-1 text-indigo-300 truncate" x-text="item.title"></p>
                             <div class="space-y-0.5 text-[10px] text-slate-300">
                               <p>🏷️ 分類：<span class="font-bold text-white" x-text="getCategoryName(item.categoryId)"></span></p>
                               <template x-if="getItemTimeText(item)">
-                                <p>🕒 課節/時間：<span class="font-bold text-amber-300" x-text="`${getItemTimeText(item)} (${item.startTime || ''} - ${item.endTime || ''})`"></span></p>
+                                <p>🕒 課節/時間：<span class="font-bold text-amber-300" x-text="getFormattedTimeDisplay(item)"></span></p>
                               </template>
                               <p>📅 日期：<span class="font-mono text-slate-400" x-text="item.date"></span></p>
                             </div>
@@ -782,7 +780,6 @@
                     <span class="text-[10px] text-slate-400 font-mono" x-text="`R${r}-C${c}`"></span>
                   </div>
 
-                  <!-- 📌 釘選按鈕 -->
                   <button @click.stop="togglePinSeat(r, c)" 
                           :title="isSeatPinned(r, c) ? (getSeatStudent(r, c) ? '已釘選此座位（固定位置）' : '已鎖定空位（隨機排位時保留空白）') : '點擊釘選固定此座位或鎖定空位'"
                           :class="isSeatPinned(r, c) ? 'bg-amber-500 text-white shadow scale-105' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 hover:text-amber-500'"
@@ -863,10 +860,10 @@
         </table>
       </div>
 
-      <!-- ==================== 7. 設定與歷史學期歸檔 ==================== -->
+      <!-- ==================== 7. 設定與歸檔頁面 ==================== -->
       <div x-show="currentTab === 'settings'" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        <!-- 🏫 3.1 新增：自訂學校課節時間表管理 -->
+        <!-- 學校課節時間表管理 -->
         <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-4 lg:col-span-2">
           <div class="flex flex-wrap justify-between items-center border-b pb-3 dark:border-slate-700 gap-2">
             <div>
@@ -999,7 +996,7 @@
     </main>
   </div>
 
-  <!-- ==================== 所有自訂 Modal 彈窗區塊 ==================== -->
+  <!-- ==================== 自訂 Modal 彈窗區塊 ==================== -->
 
   <!-- 🚨 防呆警示彈窗：時間順序錯誤提示 (點擊螢幕任意處皆可關閉) -->
   <div x-show="showTimeErrorModal" @click="showTimeErrorModal = false" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
@@ -1011,7 +1008,7 @@
     </div>
   </div>
 
-  <!-- ✨ 彈窗 0A：新增/修改日程事項彈窗 (課節選單僅保留名稱) -->
+  <!-- 新增/修改日程事項彈窗 (結束課節/時間預設 `--`) -->
   <div x-show="showEventModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-md shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b pb-2 dark:border-slate-700">
@@ -1039,7 +1036,7 @@
           <input type="date" x-model="activeEvent.date" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-700 font-bold">
         </div>
 
-        <!-- 🕒 時間與課節設定切換區塊 -->
+        <!-- 🕒 時間與課節設定 (結束時段預設 `--`) -->
         <div class="p-3 bg-slate-50 dark:bg-slate-700/40 rounded-xl space-y-3 border border-slate-200 dark:border-slate-600">
           <div class="flex items-center justify-between">
             <label class="flex items-center space-x-2 cursor-pointer">
@@ -1053,7 +1050,7 @@
             </div>
           </div>
 
-          <!-- 1. 學校課節模式 (下拉選單精簡：僅顯示課節名稱) -->
+          <!-- 1. 學校課節模式 (預設 `--`) -->
           <div x-show="!activeEvent.isAllDay && activeEvent.timeType === 'period'" class="grid grid-cols-2 gap-3 pt-1">
             <div>
               <label class="block text-[10px] text-slate-400 font-bold mb-1">開始課節</label>
@@ -1067,6 +1064,7 @@
             <div>
               <label class="block text-[10px] text-slate-400 font-bold mb-1">結束課節</label>
               <select x-model="activeEvent.endPeriod" @change="onPeriodChange()" class="w-full px-2.5 py-1.5 border rounded-xl dark:bg-slate-700 font-bold text-xs">
+                <option value="--">-- (單一課節)</option>
                 <template x-for="p in lessonPeriods" :key="p.id">
                   <option :value="p.id" x-text="p.label"></option>
                 </template>
@@ -1074,7 +1072,7 @@
             </div>
           </div>
 
-          <!-- 2. 具體時間模式 -->
+          <!-- 2. 具體時間模式 (預設 `--`) -->
           <div x-show="!activeEvent.isAllDay && activeEvent.timeType === 'custom'" class="grid grid-cols-2 gap-3 pt-1">
             <div class="relative">
               <label class="block text-[10px] text-slate-400 font-bold mb-1">開始時間</label>
@@ -1087,11 +1085,14 @@
 
             <div class="relative">
               <label class="block text-[10px] text-slate-400 font-bold mb-1">結束時間</label>
-              <button @click="openCustomTimePicker('endTime')" 
-                      class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-700 font-mono font-bold text-xs bg-white text-slate-800 dark:text-slate-100 flex justify-between items-center shadow-xs">
-                <span x-text="formatDisplayTime(activeEvent.endTime)"></span>
-                <span class="text-slate-400 text-[10px]">🕒</span>
-              </button>
+              <div class="flex items-center space-x-1">
+                <button @click="openCustomTimePicker('endTime')" 
+                        class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-700 font-mono font-bold text-xs bg-white text-slate-800 dark:text-slate-100 flex justify-between items-center shadow-xs">
+                  <span x-text="formatDisplayTime(activeEvent.endTime)"></span>
+                  <span class="text-slate-400 text-[10px]">🕒</span>
+                </button>
+                <button @click="activeEvent.endTime = '--'" class="px-2 py-1.5 bg-slate-200 dark:bg-slate-600 rounded-xl text-xs font-bold hover:bg-slate-300" title="設為單一時段">--</button>
+              </div>
             </div>
           </div>
         </div>
@@ -1111,7 +1112,7 @@
     </div>
   </div>
 
-  <!-- 彈窗 0F：自訂功課新增/修改 Modal -->
+  <!-- 功課 Modal -->
   <div x-show="showHwModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-md shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b pb-2 dark:border-slate-700">
@@ -1135,7 +1136,7 @@
     </div>
   </div>
 
-  <!-- 彈窗 0G：自訂測驗新增/修改 Modal -->
+  <!-- 測驗 Modal -->
   <div x-show="showQuizModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-md shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b pb-2 dark:border-slate-700">
@@ -1165,7 +1166,7 @@
     </div>
   </div>
 
-  <!-- 彈窗 0B：三步驟時間選擇器 Modal -->
+  <!-- 三步驟時間選擇器 Modal -->
   <div x-show="showTimePickerModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
     <div @click.outside="showTimePickerModal = false" class="bg-white dark:bg-slate-800 rounded-2xl p-4 w-full max-w-xs shadow-2xl space-y-3 border border-slate-200 dark:border-slate-700">
       <div class="flex justify-between items-center border-b pb-2 dark:border-slate-700">
@@ -1207,7 +1208,7 @@
     </div>
   </div>
 
-  <!-- 彈窗 0C：功課次序重排 Modal -->
+  <!-- 功課次序重排 Modal -->
   <div x-show="showReorderHwModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-md shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b pb-2 dark:border-slate-700">
@@ -1242,7 +1243,7 @@
     </div>
   </div>
 
-  <!-- 彈窗 0D：測驗次序重排 Modal -->
+  <!-- 測驗次序重排 Modal -->
   <div x-show="showReorderQuizModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-md shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b pb-2 dark:border-slate-700">
@@ -1277,7 +1278,7 @@
     </div>
   </div>
 
-  <!-- 彈窗 0E：管理分類與色彩彈窗 -->
+  <!-- 管理分類 Modal -->
   <div x-show="showManageCatModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-md shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b pb-2 dark:border-slate-700">
@@ -1304,7 +1305,7 @@
     </div>
   </div>
 
-  <!-- 彈窗 1：個人學生檔案 -->
+  <!-- 學生個人檔案 Modal -->
   <div x-show="showStudentProfileModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
     <template x-if="profileStudent">
       <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-xl shadow-2xl space-y-4 max-h-[88vh] overflow-y-auto">
@@ -1370,7 +1371,7 @@
     </template>
   </div>
 
-  <!-- 彈窗 2：自訂座位行列規模 -->
+  <!-- 班房座位規格 Modal -->
   <div x-show="showGridConfigModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-sm shadow-2xl space-y-3">
       <h3 class="font-bold text-lg">📐 設定班房座位行列規格</h3>
@@ -1390,7 +1391,7 @@
     </div>
   </div>
 
-  <!-- 彈窗 3：排位進階條件設定 -->
+  <!-- 排位條件 Modal -->
   <div x-show="showSeatingRuleModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-lg shadow-2xl space-y-4">
       <h3 class="font-bold text-lg" x-text="`⚙️ 設定 ${currentClass} 班學生座位排位條件`"></h3>
@@ -1436,7 +1437,7 @@
     </div>
   </div>
 
-  <!-- 彈窗 4：編輯學生名單 -->
+  <!-- 編輯學生 Modal -->
   <div x-show="showStudentModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-lg shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-2">
@@ -1462,7 +1463,7 @@
     </div>
   </div>
 
-  <!-- 彈窗 5：測驗合格標準與等級區段設定 -->
+  <!-- 測驗等級 Modal -->
   <div x-show="showQuizConfigModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4">
       <h3 class="font-bold text-lg border-b pb-2 dark:border-slate-700">⚙️ 設定測驗合格標準與成績區段</h3>
@@ -1497,7 +1498,7 @@
     </div>
   </div>
 
-  <!-- 彈窗 6：管理課堂事件選項 -->
+  <!-- 管理課堂事件選項 Modal -->
   <div x-show="showCategoryModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-sm shadow-2xl space-y-3">
       <h3 class="font-bold text-lg">⚙️ 管理課堂事件選項</h3>
@@ -1519,7 +1520,7 @@
     </div>
   </div>
 
-  <!-- 彈窗 7：登記課堂事件 -->
+  <!-- 登記課堂事件 Modal -->
   <div x-show="showIncidentModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-md shadow-2xl space-y-3">
       <h3 class="font-bold text-lg">登記課堂事件 / 欠帶</h3>
@@ -1680,9 +1681,9 @@ const firebaseConfig = {
           isAllDay: false,
           timeType: 'period',
           startPeriod: 'p_L1',
-          endPeriod: 'p_L1',
+          endPeriod: '--',
           startTime: '08:25',
-          endTime: '09:05'
+          endTime: '--'
         },
 
         showTimePickerModal: false,
@@ -1693,7 +1694,7 @@ const firebaseConfig = {
 
         openCustomTimePicker(targetField) {
           this.tpTargetField = targetField;
-          const currTime = this.activeEvent[targetField] || '09:00';
+          const currTime = (this.activeEvent[targetField] && this.activeEvent[targetField] !== '--') ? this.activeEvent[targetField] : '09:00';
           const [hStr, mStr] = currTime.split(':');
           let h = parseInt(hStr, 10);
           if (isNaN(h)) h = 9;
@@ -1726,7 +1727,7 @@ const firebaseConfig = {
         },
 
         formatDisplayTime(timeStr) {
-          if (!timeStr) return '09:00';
+          if (!timeStr || timeStr === '--') return '-- (單一時段)';
           const [hStr, mStr] = timeStr.split(':');
           let h = parseInt(hStr, 10);
           if (isNaN(h)) return timeStr;
@@ -1738,16 +1739,27 @@ const firebaseConfig = {
 
         onPeriodChange() {
           const sp = this.lessonPeriods.find(p => p.id === this.activeEvent.startPeriod);
-          const ep = this.lessonPeriods.find(p => p.id === this.activeEvent.endPeriod);
           if (sp) this.activeEvent.startTime = sp.startTime;
-          if (ep) this.activeEvent.endTime = ep.endTime;
+
+          if (this.activeEvent.endPeriod === '--' || !this.activeEvent.endPeriod) {
+            this.activeEvent.endTime = '--';
+          } else {
+            const ep = this.lessonPeriods.find(p => p.id === this.activeEvent.endPeriod);
+            if (ep) this.activeEvent.endTime = ep.endTime;
+          }
         },
 
         getItemTimeText(item) {
           if (item.isAllDay) return '';
 
-          const sp = this.lessonPeriods.find(p => p.startTime === item.startTime);
-          const ep = this.lessonPeriods.find(p => p.endTime === item.endTime);
+          if (!item.endPeriod || item.endPeriod === '--' || !item.endTime || item.endTime === '--') {
+            const sp = this.lessonPeriods.find(p => p.id === item.startPeriod || p.startTime === item.startTime);
+            if (sp) return sp.code;
+            return item.startTime || '';
+          }
+
+          const sp = this.lessonPeriods.find(p => p.id === item.startPeriod || p.startTime === item.startTime);
+          const ep = this.lessonPeriods.find(p => p.id === item.endPeriod || p.endTime === item.endTime);
 
           if (sp && ep) {
             if (sp.id === ep.id) return sp.code;
@@ -1760,12 +1772,21 @@ const firebaseConfig = {
           }
 
           if (item.startTime) {
-            if (item.endTime && item.endTime !== item.startTime) {
+            if (item.endTime && item.endTime !== item.startTime && item.endTime !== '--') {
               return `${item.startTime}-${item.endTime}`;
             }
             return item.startTime;
           }
           return '';
+        },
+
+        getFormattedTimeDisplay(item) {
+          const code = this.getItemTimeText(item);
+          if (!code) return '全日';
+          if (!item.endTime || item.endTime === '--' || item.endTime === item.startTime) {
+            return `${code} (${item.startTime || ''})`;
+          }
+          return `${code} (${item.startTime || ''} - ${item.endTime || ''})`;
         },
 
         toggleCardStyle() {
@@ -1909,14 +1930,17 @@ const firebaseConfig = {
             document.documentElement.classList.add('dark');
           }
 
-          auth.onAuthStateChanged(u => {
-            this.user = u;
-            if (u) {
-              this.resetState();
-              this.loadDataFromFirebase();
-            } else {
-              this.resetState();
-            }
+          // 啟用自動維持登入持久化 (Persistence LOCAL)
+          auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(() => {
+            auth.onAuthStateChanged(u => {
+              this.user = u;
+              if (u) {
+                this.resetState();
+                this.loadDataFromFirebase();
+              } else {
+                this.resetState();
+              }
+            });
           });
         },
 
@@ -1928,8 +1952,8 @@ const firebaseConfig = {
           if (this.isLoggingIn) return;
           this.isLoggingIn = true;
           try {
+            await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
             const provider = new firebase.auth.GoogleAuthProvider();
-            provider.setCustomParameters({ prompt: 'select_account' });
             await auth.signInWithPopup(provider);
           } catch (e) {
             if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
@@ -2050,6 +2074,8 @@ const firebaseConfig = {
                 date: e.date,
                 categoryId: e.categoryId,
                 isAllDay: e.isAllDay,
+                startPeriod: e.startPeriod,
+                endPeriod: e.endPeriod,
                 startTime: e.startTime,
                 endTime: e.endTime
               });
@@ -2066,7 +2092,7 @@ const firebaseConfig = {
                 categoryId: 'cat_hw',
                 isAllDay: h.isAllDay !== undefined ? h.isAllDay : true,
                 startTime: h.startTime || '08:25',
-                endTime: h.endTime || '09:05'
+                endTime: h.endTime || '--'
               });
             }
           });
@@ -2081,7 +2107,7 @@ const firebaseConfig = {
                 categoryId: 'cat_quiz',
                 isAllDay: q.isAllDay !== undefined ? q.isAllDay : true,
                 startTime: q.startTime || '08:25',
-                endTime: q.endTime || '09:05'
+                endTime: q.endTime || '--'
               });
             }
           });
@@ -2152,9 +2178,9 @@ const firebaseConfig = {
             isAllDay: false,
             timeType: 'period',
             startPeriod: defaultP,
-            endPeriod: defaultP,
+            endPeriod: '--',
             startTime: defaultPItem.startTime,
-            endTime: defaultPItem.endTime
+            endTime: '--'
           };
           this.showEventModal = true;
         },
@@ -2164,8 +2190,8 @@ const firebaseConfig = {
           this.isEditEventMode = true;
           let cleanTitle = (item.title || '').replace(/^\[[^\]]+\]\s*/, '');
           
-          const sp = this.lessonPeriods.find(p => p.startTime === item.startTime);
-          const ep = this.lessonPeriods.find(p => p.endTime === item.endTime);
+          const sp = this.lessonPeriods.find(p => p.id === item.startPeriod || p.startTime === item.startTime);
+          const ep = this.lessonPeriods.find(p => p.id === item.endPeriod || p.endTime === item.endTime);
 
           this.activeEvent = {
             id: item.id,
@@ -2175,28 +2201,29 @@ const firebaseConfig = {
             categoryId: item.categoryId || 'cat_todo',
             targetClass: this.currentClass,
             isAllDay: item.isAllDay !== undefined ? item.isAllDay : false,
-            timeType: (sp && ep) ? 'period' : 'custom',
+            timeType: (sp || item.startPeriod) ? 'period' : 'custom',
             startPeriod: sp ? sp.id : (this.lessonPeriods[0] ? this.lessonPeriods[0].id : 'p_L1'),
-            endPeriod: ep ? ep.id : (this.lessonPeriods[0] ? this.lessonPeriods[0].id : 'p_L1'),
+            endPeriod: ep ? ep.id : '--',
             startTime: item.startTime || '08:25',
-            endTime: item.endTime || '09:05'
+            endTime: item.endTime || '--'
           };
           this.showEventModal = true;
         },
 
-        // 時間與課節防呆驗證邏輯
         validateEventTime() {
           if (this.activeEvent.isAllDay) return true;
 
           if (this.activeEvent.timeType === 'period') {
-            const startIdx = this.lessonPeriods.findIndex(p => p.id === this.activeEvent.startPeriod);
-            const endIdx = this.lessonPeriods.findIndex(p => p.id === this.activeEvent.endPeriod);
-            if (startIdx !== -1 && endIdx !== -1 && endIdx < startIdx) {
-              this.showTimeErrorModal = true;
-              return false;
+            if (this.activeEvent.endPeriod && this.activeEvent.endPeriod !== '--') {
+              const startIdx = this.lessonPeriods.findIndex(p => p.id === this.activeEvent.startPeriod);
+              const endIdx = this.lessonPeriods.findIndex(p => p.id === this.activeEvent.endPeriod);
+              if (startIdx !== -1 && endIdx !== -1 && endIdx < startIdx) {
+                this.showTimeErrorModal = true;
+                return false;
+              }
             }
           } else {
-            if (this.activeEvent.startTime && this.activeEvent.endTime && this.activeEvent.endTime < this.activeEvent.startTime) {
+            if (this.activeEvent.startTime && this.activeEvent.endTime && this.activeEvent.endTime !== '--' && this.activeEvent.endTime < this.activeEvent.startTime) {
               this.showTimeErrorModal = true;
               return false;
             }
@@ -2208,7 +2235,6 @@ const firebaseConfig = {
           if (!this.activeEvent.title.trim()) return alert('請輸入內容標題');
           if (!this.activeEvent.date) return alert('請選擇日期');
 
-          // 觸發時間防呆檢查，錯誤時跳出警告彈窗且不保存
           if (!this.validateEventTime()) return;
 
           let titleToSave = this.activeEvent.title.trim().replace(/^\[[^\]]+\]\s*/, '');
@@ -2255,7 +2281,7 @@ const firebaseConfig = {
             date: this.getLocalToday(),
             isAllDay: true,
             startTime: '08:25',
-            endTime: '09:05'
+            endTime: '--'
           };
           this.showHwModal = true;
         },
@@ -2271,7 +2297,7 @@ const firebaseConfig = {
             date: hw.date || this.getLocalToday(),
             isAllDay: hw.isAllDay !== undefined ? hw.isAllDay : true,
             startTime: hw.startTime || '08:25',
-            endTime: hw.endTime || '09:05'
+            endTime: hw.endTime || '--'
           };
           this.showHwModal = true;
         },
@@ -2307,7 +2333,7 @@ const firebaseConfig = {
             date: this.getLocalToday(),
             isAllDay: true,
             startTime: '08:25',
-            endTime: '09:05'
+            endTime: '--'
           };
           this.showQuizModal = true;
         },
@@ -2324,7 +2350,7 @@ const firebaseConfig = {
             date: q.date || this.getLocalToday(),
             isAllDay: q.isAllDay !== undefined ? q.isAllDay : true,
             startTime: q.startTime || '08:25',
-            endTime: q.endTime || '09:05'
+            endTime: q.endTime || '--'
           };
           this.showQuizModal = true;
         },
